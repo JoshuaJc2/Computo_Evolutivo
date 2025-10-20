@@ -35,6 +35,49 @@ def seleccion_ruleta(poblacion, fitness_array, num_padres):
     indices = np.random.choice(len(poblacion), size=num_padres, p=probas)
     return poblacion[indices]
 
+'''
+def seleccion_torneo(population, fitnesses, num_selections):
+    selected = []
+    for _ in range(num_selections):
+        tournament = random.sample(range(len(population)),20)
+        winner = max(tournament, key=lambda i: fitnesses[i])
+        selected.append(population[winner])
+    #print(selected)
+    return selected
+'''
+
+def seleccion_torneo(population, fitnesses, num_selections, tournament_size=3, pressure=1.0):
+    selected = []
+    
+    for _ in range(num_selections):
+        tournament_indices = random.sample(range(len(population)), tournament_size)
+        tournament_indices.sort(key=lambda i: fitnesses[i], reverse=True)
+        if random.random() < pressure:
+            winner = tournament_indices[0]
+        else:
+            winner = random.choice(tournament_indices[1:] if len(tournament_indices) > 1 else tournament_indices)
+        
+        selected.append(population[winner])
+    
+    return selected
+
+def seleccion_elitismo(population, fitnesses, num_selections, num_elites=2, tournament_size=3):
+
+    sorted_indices = sorted(range(len(population)), key=lambda i: fitnesses[i], reverse=True)
+    elite_individuals = [population[i] for i in sorted_indices[:num_elites]]
+    num_tournament_selections = num_selections - num_elites
+    
+    if num_tournament_selections > 0:
+        selected_individuals = seleccion_torneo(
+            population, 
+            fitnesses,
+            num_tournament_selections,
+            tournament_size  # Asegúrate de pasar este parámetro también
+        )
+        return elite_individuals + selected_individuals
+    else:
+        return elite_individuals
+
 # Cruza uniforme
 def cruza_uniforme(padre1, padre2, prob_cruza=0.8):
     longitud = len(padre1)
@@ -59,6 +102,14 @@ def cruza_uniforme(padre1, padre2, prob_cruza=0.8):
     
     return hijo1, hijo2
 
+
+def cruza_un_punto(padre1, padre2):
+    punto = random.randint(1, len(padre1) - 1)
+    hijo1 = np.concatenate([padre1[:punto], padre2[punto:]])
+    hijo2 = np.concatenate([padre2[:punto], padre1[punto:]])
+    
+    return hijo1, hijo2
+
 # Mutación
 # Implementa una mutacion por intercambio.
 def mutar(individuo):
@@ -69,7 +120,7 @@ def mutar(individuo):
     return individuo
 
 def mutar_un_bit(individuo):
-    a= random.randrange(len(individuo))
+    i = random.randrange(len(individuo))
     individuo[i] = 1 - individuo[i]
     return individuo
 
@@ -92,6 +143,10 @@ def generar_nueva_poblacion(poblacion, fitness, porcNewInd, porcMutacion, funSel
         padres = seleccion_ruleta(poblacion, fitness, n_new)
     elif funSeleccion.lower() == "torneo":
         padres = seleccion_torneo(poblacion, fitness, n_new)
+    elif funSeleccion.lower() == "elitismo":
+        padres = seleccion_elitismo(poblacion, fitness, n_new)
+    elif funSeleccion.lower() == "torneo":
+        padres = seleccion_torneo(poblacion, fitness, n_new)
     else:
         raise ValueError("Método de selección no reconocido")
 
@@ -103,7 +158,7 @@ def generar_nueva_poblacion(poblacion, fitness, porcNewInd, porcMutacion, funSel
         p1 = padres[i % len(padres)]
         p2 = padres[(i+1) % len(padres)]
         # Generar un par de hijos
-        h1, h2 = cruza_uniforme(p1, p2)
+        h1, h2 =cruza_un_punto(p1, p2)
         # Aleatoriamente decidir si introducir mutacion a algunos de los hijos
         h1 = mutar_flip(h1)
         h2 = mutar_flip(h2)
@@ -121,7 +176,7 @@ def generar_poblacion_inicial(NIND, dim_x, n_bits):
 
 def algoritmo_genetico(nombre_funcion, dim_x=10, n_bits=16, NIND=100, 
                        max_generaciones=100, porcNewInd=0.8, probMutacion=0.01,
-                       funSeleccion='ruleta', probCruza=0.8):
+                       funSeleccion='elitismo', probCruza=0.8):
     # Obtener función y rangos
     funcion, a, b = FUNCIONES[nombre_funcion.lower()]
     
@@ -168,4 +223,4 @@ def algoritmo_genetico(nombre_funcion, dim_x=10, n_bits=16, NIND=100,
 
 if __name__ == "__main__":
     # Optimizar función Sphere
-    algoritmo_genetico('ackley')
+    algoritmo_genetico('rosenbrock')
