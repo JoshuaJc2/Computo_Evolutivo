@@ -145,8 +145,6 @@ def generar_nueva_poblacion(poblacion, fitness, porcNewInd, porcMutacion, funSel
         padres = seleccion_torneo(poblacion, fitness, n_new)
     elif funSeleccion.lower() == "elitismo":
         padres = seleccion_elitismo(poblacion, fitness, n_new)
-    elif funSeleccion.lower() == "torneo":
-        padres = seleccion_torneo(poblacion, fitness, n_new)
     else:
         raise ValueError("Método de selección no reconocido")
 
@@ -176,7 +174,7 @@ def generar_poblacion_inicial(NIND, dim_x, n_bits):
 
 def algoritmo_genetico(nombre_funcion, dim_x=10, n_bits=16, NIND=100, 
                        max_generaciones=100, porcNewInd=0.8, probMutacion=0.01,
-                       funSeleccion='elitismo', probCruza=0.8):
+                       funSeleccion='ruleta', probCruza=0.8):
     # Obtener función y rangos
     funcion, a, b = FUNCIONES[nombre_funcion.lower()]
     
