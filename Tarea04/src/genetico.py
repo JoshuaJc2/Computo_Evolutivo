@@ -48,31 +48,28 @@ def seleccion_torneo(population, fitnesses, num_selections):
 
 def seleccion_torneo(population, fitnesses, num_selections, tournament_size=3, pressure=1.0):
     selected = []
-    
     for _ in range(num_selections):
         tournament_indices = random.sample(range(len(population)), tournament_size)
-        tournament_indices.sort(key=lambda i: fitnesses[i], reverse=True)
+        # Minimización: menor fitness es mejor
+        tournament_indices.sort(key=lambda i: fitnesses[i], reverse=False)
         if random.random() < pressure:
             winner = tournament_indices[0]
         else:
             winner = random.choice(tournament_indices[1:] if len(tournament_indices) > 1 else tournament_indices)
-        
         selected.append(population[winner])
-    
     return selected
 
 def seleccion_elitismo(population, fitnesses, num_selections, num_elites=2, tournament_size=3):
-
-    sorted_indices = sorted(range(len(population)), key=lambda i: fitnesses[i], reverse=True)
+    # Minimización: menor fitness es mejor
+    sorted_indices = sorted(range(len(population)), key=lambda i: fitnesses[i], reverse=False)
     elite_individuals = [population[i] for i in sorted_indices[:num_elites]]
     num_tournament_selections = num_selections - num_elites
-    
     if num_tournament_selections > 0:
         selected_individuals = seleccion_torneo(
             population, 
             fitnesses,
             num_tournament_selections,
-            tournament_size  # Asegúrate de pasar este parámetro también
+            tournament_size
         )
         return elite_individuals + selected_individuals
     else:
@@ -131,14 +128,12 @@ def mutar_flip(individuo, prob_mutacion=0.01):
     return individuo
 
 
-def generar_nueva_poblacion(poblacion, fitness, porcNewInd, porcMutacion, funSeleccion):
+def generar_nueva_poblacion(poblacion, fitness, porcNewInd, porcMutacion, funSeleccion,
+                            probCruza=0.8):
     NIND = len(poblacion)
-    n_new = int(porcNewInd * NIND)      # Numero de nuevos individuo para esta poblacion
-
-    # El resto se eligen por elitismo
+    n_new = int(porcNewInd * NIND)
     elite_indices = np.argsort(fitness)[:NIND - n_new]
     elite = poblacion[elite_indices]
-
     if funSeleccion.lower() == "ruleta":
         padres = seleccion_ruleta(poblacion, fitness, n_new)
     elif funSeleccion.lower() == "torneo":
@@ -147,22 +142,16 @@ def generar_nueva_poblacion(poblacion, fitness, porcNewInd, porcMutacion, funSel
         padres = seleccion_elitismo(poblacion, fitness, n_new)
     else:
         raise ValueError("Método de selección no reconocido")
-
-
-    # Generar nuevos individuos por cruce
     hijos = []
-    for i in range(0, n_new,2):
-        # Tomar a los padres para el cruce
+    for i in range(0, n_new, 2):
         p1 = padres[i % len(padres)]
         p2 = padres[(i+1) % len(padres)]
-        # Generar un par de hijos
-        h1, h2 =cruza_un_punto(p1, p2)
-        # Aleatoriamente decidir si introducir mutacion a algunos de los hijos
-        h1 = mutar_flip(h1)
-        h2 = mutar_flip(h2)
-        # Agregar el nuevo par de hijos
+        # Cruza uniforme con probabilidad y clones si no cruza
+        h1, h2 = cruza_uniforme(p1, p2, prob_cruza=probCruza)
+        h1 = mutar_flip(h1, prob_mutacion=porcMutacion)
+        h2 = mutar_flip(h2, prob_mutacion=porcMutacion)
         hijos.extend([h1, h2])
-    hijos[:n_new]
+    hijos = hijos[:n_new]
     nueva_poblacion = np.vstack((elite, hijos))
     return nueva_poblacion
 
@@ -192,9 +181,8 @@ def algoritmo_genetico(nombre_funcion, dim_x=10, n_bits=16, NIND=100,
     
     # Evolución
     for gen in range(1, max_generaciones + 1):
-        # Generar nueva población
         poblacion = generar_nueva_poblacion(poblacion, fitness, porcNewInd, 
-                                           probMutacion, funSeleccion)
+                                           probMutacion, funSeleccion, probCruza=probCruza)
         
         # Evaluar nueva población
         fitness = evaluar_poblacion(poblacion, funcion, dim_x, n_bits, a, b)
