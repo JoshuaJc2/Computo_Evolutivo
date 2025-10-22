@@ -129,7 +129,7 @@ def mutar_flip(individuo, prob_mutacion=0.01):
 
 
 def generar_nueva_poblacion(poblacion, fitness, porcNewInd, porcMutacion, funSeleccion,
-                            probCruza=0.8):
+                            funCruza, probCruza=0.8):
     NIND = len(poblacion)
     n_new = int(porcNewInd * NIND)
     elite_indices = np.argsort(fitness)[:NIND - n_new]
@@ -146,8 +146,12 @@ def generar_nueva_poblacion(poblacion, fitness, porcNewInd, porcMutacion, funSel
     for i in range(0, n_new, 2):
         p1 = padres[i % len(padres)]
         p2 = padres[(i+1) % len(padres)]
-        # Cruza uniforme con probabilidad y clones si no cruza
-        h1, h2 = cruza_uniforme(p1, p2, prob_cruza=probCruza)
+        # Tipo de Cruza
+        #h1, h2 = cruza_un_punto(p1, p2)
+        if funCruza.lower() == "cruza_un_punto":
+            h1, h2 = cruza_un_punto(p1, p2)
+        elif funCruza.lower() == "cruza_uniforme":
+            h1, h2 = cruza_uniforme(p1, p2, prob_cruza=probCruza)
         h1 = mutar_flip(h1, prob_mutacion=porcMutacion)
         h2 = mutar_flip(h2, prob_mutacion=porcMutacion)
         hijos.extend([h1, h2])
@@ -163,7 +167,7 @@ def generar_poblacion_inicial(NIND, dim_x, n_bits):
 
 def algoritmo_genetico(nombre_funcion, dim_x=10, n_bits=16, NIND=100, 
                        max_generaciones=100, porcNewInd=0.8, probMutacion=0.01,
-                       funSeleccion='ruleta', probCruza=0.8):
+                       funSeleccion='ruleta', probCruza=0.8, funCruza='cruza_uniforme'):
     # Obtener función y rangos
     funcion, a, b = FUNCIONES[nombre_funcion.lower()]
     
@@ -178,11 +182,13 @@ def algoritmo_genetico(nombre_funcion, dim_x=10, n_bits=16, NIND=100,
     
     print(f"Optimizando {nombre_funcion} con dimensión {dim_x}")
     print(f"Generación 0: Mejor fitness = {mejor_fitness_historico:.6f}")
+    print(f"funSeleccion: {funSeleccion}\nfunCruza: {funCruza}")
+
     
     # Evolución
     for gen in range(1, max_generaciones + 1):
         poblacion = generar_nueva_poblacion(poblacion, fitness, porcNewInd, 
-                                           probMutacion, funSeleccion, probCruza=probCruza)
+                                           probMutacion, funSeleccion, funCruza,probCruza=probCruza)
         
         # Evaluar nueva población
         fitness = evaluar_poblacion(poblacion, funcion, dim_x, n_bits, a, b)

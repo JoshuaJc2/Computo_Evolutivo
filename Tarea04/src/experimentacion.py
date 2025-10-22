@@ -12,8 +12,28 @@ from genetico import generar_poblacion_inicial, evaluar_poblacion, generar_nueva
 from codificacion import decodifica_array
 
 
+def busqueda_aleatoria_simple(nombre_funcion, dim_x=10, NIND=100, max_generaciones=100):
+    """
+    Búsqueda aleatoria para baseline (Inciso 2.a).
+    Mismo presupuesto que AG: NIND * (max_generaciones + 1) evaluaciones.
+    """
+    funcion, a, b = FUNCIONES[nombre_funcion.lower()]
+    total_evaluaciones = NIND * (max_generaciones + 1)
+    
+    mejor_fitness = float('inf')
+    mejor_solucion = None
+    
+    for _ in range(total_evaluaciones):
+        x = np.random.uniform(a, b, dim_x)
+        fitness = funcion(x)
+        if fitness < mejor_fitness:
+            mejor_fitness = fitness
+            mejor_solucion = x.copy()
+    
+    return {'mejor_fitness': mejor_fitness, 'mejor_solucion': mejor_solucion}
+
+
 def distancia_hamming(ind1, ind2):
-    """Calcula la distancia de Hamming entre dos individuos binarios"""
     return np.sum(ind1 != ind2)
 
 
@@ -47,7 +67,7 @@ def calcular_diversidad_normalizada(poblacion):
 
 def algoritmo_con_tracking(nombre_funcion, dim_x=10, n_bits=16, NIND=100, 
                            max_generaciones=100, porcNewInd=0.8, probMutacion=0.01,
-                           funSeleccion='elitismo'):
+                           funSeleccion='elitismo', funCruza='cruza_uniforme'):
     """Ejecuta el AG con tracking de aptitud Y diversidad"""
     funcion, a, b = FUNCIONES[nombre_funcion.lower()]
     poblacion = generar_poblacion_inicial(NIND, dim_x, n_bits)
@@ -67,7 +87,7 @@ def algoritmo_con_tracking(nombre_funcion, dim_x=10, n_bits=16, NIND=100,
     
     # Evolución
     for gen in range(1, max_generaciones + 1):
-        poblacion = generar_nueva_poblacion(poblacion, fitness, porcNewInd, probMutacion, funSeleccion)
+        poblacion = generar_nueva_poblacion(poblacion, fitness, porcNewInd, probMutacion, funSeleccion, funCruza)
         fitness = evaluar_poblacion(poblacion, funcion, dim_x, n_bits, a, b)
         
         # Guardar aptitud
@@ -107,7 +127,8 @@ def ejecutar_experimentos(num_ejecuciones=10):
         'max_generaciones': 100,
         'porcNewInd': 0.8,
         'probMutacion': 0.01,
-        'funSeleccion': 'elitismo'
+        'funSeleccion': 'elitismo',
+        'funCruza': 'cruza_uniforme'
     }
     
     funciones = ['sphere', 'ackley', 'griewank', 'rastrigin', 'rosenbrock']
@@ -241,15 +262,70 @@ def guardar_datos(resultados):
     print(" Datos guardados: ../output/datos_experimentos.pkl")
 
 
+def ejecutar_busqueda_aleatoria(num_ejecuciones=10):
+    """Ejecuta búsqueda aleatoria para comparación (Inciso 2.a)."""
+    params = {'dim_x': 10, 'NIND': 100, 'max_generaciones': 100}
+    funciones = ['sphere', 'ackley', 'griewank', 'rastrigin', 'rosenbrock']
+    resultados = []
+    
+    print(f"\n{'='*60}")
+    print("  BÚSQUEDA ALEATORIA (Baseline)")
+    print("="*60)
+    
+    for func in funciones:
+        print(f"\n{func.upper()}:")
+        fitness_list = []
+        for i in range(num_ejecuciones):
+            resultado = busqueda_aleatoria_simple(func, **params)
+            fitness_list.append(resultado['mejor_fitness'])
+            print(f"  Ejecución {i+1:2d}: Fitness={resultado['mejor_fitness']:.8f}")
+        
+        stats = {
+            'funcion': func,
+            'algoritmo': 'BusquedaAleatoria',
+            'mejor': np.min(fitness_list),
+            'peor': np.max(fitness_list),
+            'promedio': np.mean(fitness_list),
+            'desviacion': np.std(fitness_list),
+            'mediana': np.median(fitness_list),
+            'fitness_list': fitness_list
+        }
+        resultados.append(stats)
+        print(f"  → Mejor: {stats['mejor']:.8f}, Promedio: {stats['promedio']:.8f}")
+    
+    return resultados
+
+
 if __name__ == "__main__":
     num_ejecuciones = 10
     if len(sys.argv) > 1:
         num_ejecuciones = int(sys.argv[1])
     
-    resultados = ejecutar_experimentos(num_ejecuciones)
-    guardar_csv(resultados)
-    exportar_datos_graficas(resultados)
-    guardar_datos(resultados)
+    # Ejecutar AG
+    resultados_ag = ejecutar_experimentos(num_ejecuciones)
+    guardar_csv(resultados_ag)
+    exportar_datos_graficas(resultados_ag)
+    guardar_datos(resultados_ag)
+    
+    # Ejecutar búsqueda aleatoria para comparación
+    print("\n\n")
+    resultados_aleatoria = ejecutar_busqueda_aleatoria(num_ejecuciones)
+    
+    # Guardar comparativa
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    archivo_comp = f'../output/comparativa_ag_vs_aleatoria_{timestamp}.csv'
+    with open(archivo_comp, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['Algoritmo', 'Funcion', 'Mejor', 'Peor', 'Promedio', 'Mediana', 'Desv.Est.'])
+        for r in resultados_ag:
+            writer.writerow(['AG', r['funcion'], f"{r['mejor']:.10f}", 
+                           f"{r['peor']:.10f}", f"{r['promedio']:.10f}",
+                           f"{r['mediana']:.10f}", f"{r['desviacion']:.10f}"])
+        for r in resultados_aleatoria:
+            writer.writerow([r['algoritmo'], r['funcion'], f"{r['mejor']:.10f}",
+                           f"{r['peor']:.10f}", f"{r['promedio']:.10f}",
+                           f"{r['mediana']:.10f}", f"{r['desviacion']:.10f}"])
+    print(f"\n✓ Comparativa guardada: {archivo_comp}")
     
     print("\n" + "="*60)
     print(" COMPLETADO")

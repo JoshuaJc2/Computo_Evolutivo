@@ -36,6 +36,26 @@ Notas de parámetros relevantes (predeterminados):
 - tipoCruza='uniforme', probCruza=0.8 (clona si no cruza)
 - probMutacion=0.01 (flip bit por bit)
 
+3) Ejecutar búsqueda aleatoria (baseline para comparación):
+	cd src
+	python busqueda_aleatoria.py
+
+	Esto genera:
+	- output/busqueda_aleatoria_YYYYMMDD_HHMMSS.csv
+
+4) Ejecutar variantes del AG (inciso 2.b):
+	cd src
+	python experimentacion_variantes.py
+
+	Ejecuta 4 variantes × 5 funciones × 10 corridas
+	Genera: output/comparativa_variantes_YYYYMMDD_HHMMSS.csv
+
+5) Modo interactivo (probar manualmente con diferentes parámetros):
+	cd src
+	python main.py
+
+	Permite elegir función, selección, cruza, parámetros, etc.
+
 Ejecutar un ejemplo rápido (solo una función):
 	cd src
 	python -c "from genetico import algoritmo_genetico; algoritmo_genetico('sphere')"
