@@ -39,6 +39,7 @@ def griewank(X : np.array):
     cos_terms = np.cos(X / np.sqrt(indices))
     prod_term = np.prod(cos_terms)
 
+    # Definición correcta: 1 + sum(x_i^2/4000) - prod(cos(x_i/sqrt(i))) ent chance es  return 1 + sum_term - prod_term
     return 1 + sum_term + prod_term
 
 def rastrigin(X : np.array):
