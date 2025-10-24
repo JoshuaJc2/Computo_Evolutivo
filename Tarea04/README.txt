@@ -1,10 +1,15 @@
-Tarea 4 - Algoritmo Genético (Optimización continua)
+Tarea 4 - Algoritmo Genético vs Busqueda Aleatoria
+
+Integrantes: 
+ - Castillo Hernández Antonio - 320017438
+ - Luna Campos Emiliano - 320292084
+ = Juárez Cruz Joshua - 320124516
 
 Requisitos
 - Python 3
 - Paquetes: numpy, matplotlib
 
-Instalación de dependencias (opcional)
+Instalación de dependencias: 
 	pip install numpy matplotlib
 
 Ejecuciones y generación de salidas
@@ -43,19 +48,11 @@ Notas de parámetros relevantes (predeterminados):
 	Esto genera:
 	- output/busqueda_aleatoria_YYYYMMDD_HHMMSS.csv
 
-4) Ejecutar variantes del AG (inciso 2.b):
-	cd src
-	python experimentacion_variantes.py
-
-	Ejecuta 4 variantes × 5 funciones × 10 corridas
-	Genera: output/comparativa_variantes_YYYYMMDD_HHMMSS.csv
-
-5) Modo interactivo (probar manualmente con diferentes parámetros):
+4) Modo interactivo (probar manualmente con diferentes parámetros):
 	cd src
 	python main.py
 
 	Permite elegir función, selección, cruza, parámetros, etc.
 
-Ejecutar un ejemplo rápido (solo una función):
-	cd src
-	python -c "from genetico import algoritmo_genetico; algoritmo_genetico('sphere')"
+
+(PD: Si se desea generar diferentes salidas de los algoritmos de acuerdo a lavariante, se puede cambiar los metodos elegidos que quedaron hardcodeados en experimentacion.py y genetico.py o si es solo una prueba unitaria es mejor usar el archivo main.py)

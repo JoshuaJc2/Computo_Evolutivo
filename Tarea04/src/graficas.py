@@ -61,8 +61,7 @@ def graficar_evolucion_aptitud_todas(resultados):
 
 def graficar_mejor_vs_promedio_por_funcion(resultados):
     """
-    GRÁFICA EXTRA: Para cada función, mejor vs aptitud promedio por generación.
-    Cumple explícitamente con el requisito 2.e.
+    Grafica mejor_vs_promedio: Para cada función, mejor vs aptitud promedio por generación.
     """
     for stats in resultados:
         func = stats['funcion']
@@ -285,7 +284,7 @@ def main():
     print("  4. 4_calidad_ejecuciones_todas.png    - Calidad ejecuciones (5 subplots)")
     print("  5. 5_boxplot_comparacion.png          - BoxPlot comparativo")
     print("  6. evolucion_<func>_mejor_vs_promedio.png - Mejor vs Promedio (1 por función)")
-    print("\nTotal: 5 gráficas consolidadas\n")
+    print("\nTotal: 5 gráficas consolidadas + gráficas de evolución por función\n")
 
 
 if __name__ == "__main__":

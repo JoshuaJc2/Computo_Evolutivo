@@ -35,17 +35,6 @@ def seleccion_ruleta(poblacion, fitness_array, num_padres):
     indices = np.random.choice(len(poblacion), size=num_padres, p=probas)
     return poblacion[indices]
 
-'''
-def seleccion_torneo(population, fitnesses, num_selections):
-    selected = []
-    for _ in range(num_selections):
-        tournament = random.sample(range(len(population)),20)
-        winner = max(tournament, key=lambda i: fitnesses[i])
-        selected.append(population[winner])
-    #print(selected)
-    return selected
-'''
-
 def seleccion_torneo(population, fitnesses, num_selections, tournament_size=3, pressure=1.0):
     selected = []
     for _ in range(num_selections):

@@ -11,7 +11,7 @@ from genetico import FUNCIONES
 def busqueda_aleatoria(nombre_funcion, dim_x=10, n_bits=16, NIND=100, 
                        max_generaciones=100, mostrar_progreso=True):
     """
-    Búsqueda aleatoria pura para baseline.
+    Búsqueda aleatoria para baseline.
     Presupuesto: NIND * (max_generaciones + 1) evaluaciones (igual que AG).
     """
     funcion, a, b = FUNCIONES[nombre_funcion.lower()]
@@ -124,7 +124,7 @@ def guardar_resultados_csv(resultados):
                 f"{r['desviacion']:.10f}"
             ])
     
-    print(f"\n✓ Resultados guardados: {archivo}")
+    print(f"\n Resultados guardados: {archivo}")
     return archivo
 
 
@@ -136,4 +136,3 @@ if __name__ == "__main__":
     print("  COMPLETADO")
     print("="*70)
     print("\nEste baseline debe compararse con los resultados del AG.")
-    print("El AG debería superar significativamente estos resultados.\n")

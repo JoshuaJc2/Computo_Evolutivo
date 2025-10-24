@@ -118,8 +118,8 @@ def algoritmo_con_tracking(nombre_funcion, dim_x=10, n_bits=16, NIND=100,
 
 def ejecutar_experimentos(num_ejecuciones=10):
     """Ejecuta 10+ veces cada función y guarda resultados"""
-    
-    # Parámetros
+
+    # Parámetros que se utilizan en los experimentos
     params = {
         'dim_x': 10,
         'n_bits': 16,
@@ -325,7 +325,7 @@ if __name__ == "__main__":
             writer.writerow([r['algoritmo'], r['funcion'], f"{r['mejor']:.10f}",
                            f"{r['peor']:.10f}", f"{r['promedio']:.10f}",
                            f"{r['mediana']:.10f}", f"{r['desviacion']:.10f}"])
-    print(f"\n✓ Comparativa guardada: {archivo_comp}")
+    print(f"\n Comparativa guardada: {archivo_comp}")
     
     print("\n" + "="*60)
     print(" COMPLETADO")
