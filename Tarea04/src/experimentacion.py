@@ -67,7 +67,7 @@ def calcular_diversidad_normalizada(poblacion):
 
 def algoritmo_con_tracking(nombre_funcion, dim_x=10, n_bits=16, NIND=100, 
                            max_generaciones=100, porcNewInd=0.8, probMutacion=0.01,
-                           funSeleccion='elitismo', funCruza='cruza_uniforme'):
+                           funSeleccion='ruleta', funCruza='cruza_un_punto'):
     """Ejecuta el AG con tracking de aptitud Y diversidad"""
     funcion, a, b = FUNCIONES[nombre_funcion.lower()]
     poblacion = generar_poblacion_inicial(NIND, dim_x, n_bits)
