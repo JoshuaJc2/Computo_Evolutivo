@@ -1,13 +1,22 @@
 import numpy as np
 import random
 import math
+import time
 from sudoku import Sudoku, SudokuSolution
 
 def enfriamiento_geometrico(temperatura, alpha):
     return alpha * temperatura
 
-def recocido_simulado(problema, temp_inicial=100.0, alpha=0.9, max_iteraciones = 1000, markov_length=None, max_estancamiento = 650, initial_reheat_factor=3.0, min_reheat_factor=1.5):
+def recocido_simulado(problema, temp_inicial=100.0, alpha=0.9, max_iteraciones = 1000,
+                      markov_length=None, max_estancamiento = 650,
+                      initial_reheat_factor=3.0, min_reheat_factor=1.5,
+                      seed: int = None, max_evaluaciones: int = None):
     # Inicialización
+    # reproducibilidad
+    if seed is not None:
+        random.seed(seed)
+        np.random.seed(seed)
+
     solucion_actual = SudokuSolution(problema)
     fitness_actual = solucion_actual.evaluate()
 
@@ -31,6 +40,7 @@ def recocido_simulado(problema, temp_inicial=100.0, alpha=0.9, max_iteraciones =
     #max_temp = temp_inicial * 0.5
     num_recalentar = 0
     total_it_markov = 0
+    start_time = time.time()
 
     print(f"Iniciando SA con Markov Chain y Reheating Decreciente:")
     print(f"  T_inicial: {temp_inicial:.2f}, Alpha: {alpha}")
@@ -91,37 +101,62 @@ def recocido_simulado(problema, temp_inicial=100.0, alpha=0.9, max_iteraciones =
             print(f"  Iter {iteracion}: T={temperatura:.3f}, "
                   f"Best={mejor_fitness:.1f}, Current={fitness_actual:.1f}, "
                   f"Evals={total_it_markov:,}")
-    return mejor_solucion, mejor_fitness
+
+        # Checar límite de evaluaciones (criterio de término opcional)
+        if max_evaluaciones is not None and total_it_markov >= max_evaluaciones:
+            print(f"Tope de evaluaciones alcanzado: {total_it_markov}")
+            break
+
+    elapsed = time.time() - start_time
+    estadisticas = {
+        'evaluaciones_totales': total_it_markov,
+        'generaciones': iteracion,
+        'time': elapsed,
+        'seed': seed
+    }
+
+    return mejor_solucion, mejor_fitness, estadisticas
 
 # Ejemplo de uso
 if __name__ == "__main__":
-    from sudoku import Sudoku
+    import argparse
+    parser = argparse.ArgumentParser(description='Ejecutar SA para un ejemplar de sudoku')
+    parser.add_argument('--ejemplar', type=str, default=None,
+                        help='Ruta al archivo del ejemplar (si no se indica, se usará un grid de ejemplo)')
+    parser.add_argument('--seed', type=int, default=None, help='Semilla RNG (opcional)')
+    parser.add_argument('--max_iter', type=int, default=1000, help='Número máximo de iteraciones externas')
+    parser.add_argument('--max_evals', type=int, default=None, help='Tope de evaluaciones (opcional)')
+    args = parser.parse_args()
 
-    grid = [
-        [1, 0, 0, 0, 0, 7, 0, 9, 0],
-        [0, 3, 0, 0, 2, 0, 0, 0, 8],
-        [0, 0, 9, 6, 0, 0, 5, 0, 0],
-        [0, 0, 5, 3, 0, 0, 9, 0, 0],
-        [0, 1, 0, 0, 8, 0, 0, 0, 2],
-        [6, 0, 0, 0, 0, 4, 0, 0, 0],
-        [3, 0, 0, 0, 0, 0, 0, 1, 0],
-        [0, 4, 0, 0, 0, 0, 0, 0, 7],
-        [0, 0, 7, 0, 0, 0, 3, 0, 0]
-    ]
+    if args.ejemplar:
+        sudoku = Sudoku.from_file(args.ejemplar)
+    else:
+        grid = [
+            [1, 0, 0, 0, 0, 7, 0, 9, 0],
+            [0, 3, 0, 0, 2, 0, 0, 0, 8],
+            [0, 0, 9, 6, 0, 0, 5, 0, 0],
+            [0, 0, 5, 3, 0, 0, 9, 0, 0],
+            [0, 1, 0, 0, 8, 0, 0, 0, 2],
+            [6, 0, 0, 0, 0, 4, 0, 0, 0],
+            [3, 0, 0, 0, 0, 0, 0, 1, 0],
+            [0, 4, 0, 0, 0, 0, 0, 0, 7],
+            [0, 0, 7, 0, 0, 0, 3, 0, 0]
+        ]
+        sudoku = Sudoku(grid)
 
-    sudoku = Sudoku(grid)
-    SA = recocido_simulado(sudoku,
-                           temp_inicial=100.0,
-                           alpha=0.9,
-                           max_iteraciones= 1000,
-                           max_estancamiento= 650,
-                           initial_reheat_factor=3.0,
-                           min_reheat_factor=1.5)
-    mejor, fitness = SA
+    mejor, fitness, stats = recocido_simulado(sudoku,
+                                             temp_inicial=100.0,
+                                             alpha=0.9,
+                                             max_iteraciones=args.max_iter,
+                                             max_estancamiento=650,
+                                             initial_reheat_factor=3.0,
+                                             min_reheat_factor=1.5,
+                                             seed=args.seed,
+                                             max_evaluaciones=args.max_evals)
 
     print(f"\nResultado final:")
     print(f"Fitness: {fitness}")
-    print(f"Evaluaciones totales: {['evaluaciones_totales']}")
-    print(f"Generaciones ejecutadas: {['generaciones']}")
+    print(f"Evaluaciones totales: {stats.get('evaluaciones_totales')}")
+    print(f"Generaciones ejecutadas: {stats.get('generaciones')}")
     print(f"\nTablero final:\n{mejor.get_grid()}")
 

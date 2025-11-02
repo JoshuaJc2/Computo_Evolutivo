@@ -179,32 +179,40 @@ class MemeticGeneticSudoku:
         return mejor, mejor_fit, estadisticas
 
 
-# Ejemplo de uso
+# Ejemplo de uso / CLI simple
 if __name__ == "__main__":
-   
-    grid = [
-        [1, 0, 0, 0, 0, 7, 0, 9, 0],
-        [0, 3, 0, 0, 2, 0, 0, 0, 8],
-        [0, 0, 9, 6, 0, 0, 5, 0, 0],
-        [0, 0, 5, 3, 0, 0, 9, 0, 0],
-        [0, 1, 0, 0, 8, 0, 0, 0, 2],
-        [6, 0, 0, 0, 0, 4, 0, 0, 0],
-        [3, 0, 0, 0, 0, 0, 0, 1, 0],
-        [0, 4, 0, 0, 0, 0, 0, 0, 7],
-        [0, 0, 7, 0, 0, 0, 3, 0, 0]
-    ]
+    import argparse
+    parser = argparse.ArgumentParser(description='Ejecutar algoritmo memético para un ejemplar de sudoku')
+    parser.add_argument('--ejemplar', type=str, default=None, help='Ruta al ejemplar (archivo)')
+    parser.add_argument('--seed', type=int, default=None, help='Semilla RNG (opcional)')
+    parser.add_argument('--pop_size', type=int, default=100, help='Tamaño de población')
+    parser.add_argument('--max_gen', type=int, default=200, help='Máx generaciones')
+    parser.add_argument('--local_apply_prob', type=float, default=0.5, help='Probabilidad de aplicar búsqueda local a cada hijo')
+    parser.add_argument('--local_max_iter', type=int, default=100, help='Máx iter. búsqueda local para cada hijo')
+    args = parser.parse_args()
 
-    sudoku = Sudoku(grid)
-    # Ejemplo de parámetros: aplicar búsqueda local a cada hijo con prob 0.2 
+    if args.ejemplar:
+        sudoku = Sudoku.from_file(args.ejemplar)
+    else:
+        grid = [
+            [1, 0, 0, 0, 0, 7, 0, 9, 0],
+            [0, 3, 0, 0, 2, 0, 0, 0, 8],
+            [0, 0, 9, 6, 0, 0, 5, 0, 0],
+            [0, 0, 5, 3, 0, 0, 9, 0, 0],
+            [0, 1, 0, 0, 8, 0, 0, 0, 2],
+            [6, 0, 0, 0, 0, 4, 0, 0, 0],
+            [3, 0, 0, 0, 0, 0, 0, 1, 0],
+            [0, 4, 0, 0, 0, 0, 0, 0, 7],
+            [0, 0, 7, 0, 0, 0, 3, 0, 0]
+        ]
+        sudoku = Sudoku(grid)
+
     ga_mem = MemeticGeneticSudoku(sudoku,
-                                  pop_size=100,
-                                  p_cruce=0.8,
-                                  p_mut=0.01,
-                                  max_generaciones=200,
-                                  local_apply_prob=0.5,
-                                  local_apply_top=0,       # si pones >0 ignora local_apply_prob y mejora top K
-                                  local_max_iter=100,
-                                  seed=1234)
+                                  pop_size=args.pop_size,
+                                  max_generaciones=args.max_gen,
+                                  local_apply_prob=args.local_apply_prob,
+                                  local_max_iter=args.local_max_iter,
+                                  seed=args.seed)
 
     mejor, fit, stats = ga_mem.run(verbose=True)
 

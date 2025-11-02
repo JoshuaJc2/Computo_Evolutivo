@@ -1,9 +1,10 @@
 import numpy as np
 import random
 from collections import Counter
+from sudoku import Sudoku, SudokuSolution
 
 class BusquedaLocalIteradaSudoku:
-    def __init__(self, problema_sudoku):
+    def __init__(self, problema_sudoku, seed: int = None):
         """
         Inicializa la búsqueda local iterada para Sudoku
         
@@ -11,6 +12,12 @@ class BusquedaLocalIteradaSudoku:
             problema_sudoku: Instancia de la clase Sudoku
         """
         self.problema = problema_sudoku
+        self.seed = seed
+        if seed is not None:
+            import random as _rand
+            import numpy as _np
+            _rand.seed(seed)
+            _np.random.seed(seed)
         
     def busqueda_local(self, solucion, max_iter=1000):
 
@@ -111,7 +118,8 @@ class BusquedaLocalIteradaSudoku:
         estadisticas = {
             'evaluaciones_totales': evaluaciones_totales,
             'historia_fitness': historia_fitness,
-            'iteraciones_totales': t
+            'iteraciones_totales': t,
+            'seed': self.seed
         }
         
         return mejor_solucion, mejor_fitness, estadisticas
@@ -120,35 +128,35 @@ class BusquedaLocalIteradaSudoku:
 
 # Ejemplo de uso
 if __name__ == "__main__":
-    # Crear un Sudoku de ejemplo (9x9)
-    from sudoku import Sudoku, SudokuSolution
-    
-    # Ejemplo de grid con algunos valores fijos
-    grid_ejemplo = [
-        [1, 0, 0, 0, 0, 7, 0, 9, 0],
-        [0, 3, 0, 0, 2, 0, 0, 0, 8],
-        [0, 0, 9, 6, 0, 0, 5, 0, 0],
-        [0, 0, 5, 3, 0, 0, 9, 0, 0],
-        [0, 1, 0, 0, 8, 0, 0, 0, 2],
-        [6, 0, 0, 0, 0, 4, 0, 0, 0],
-        [3, 0, 0, 0, 0, 0, 0, 1, 0],
-        [0, 4, 0, 0, 0, 0, 0, 0, 7],
-        [0, 0, 7, 0, 0, 0, 3, 0, 0]
-    ]
-    
-    problema = Sudoku(grid_ejemplo)
-    ils = BusquedaLocalIteradaSudoku(problema)
-    
-    # Probar diferentes configuraciones
-    print("="*60)
-    print("PRUEBA 1: Perturbación moderada + Criterio Mejor")
-    print("="*60)
-    solucion, fitness, stats = ils.iterated_local_search(
-        max_iter=1000
-    )
-    
+    import argparse
+    parser = argparse.ArgumentParser(description='Ejecutar ILS para un ejemplar de sudoku')
+    parser.add_argument('--ejemplar', type=str, default=None, help='Ruta al ejemplar (archivo)')
+    parser.add_argument('--seed', type=int, default=None, help='Semilla RNG (opcional)')
+    parser.add_argument('--max_iter', type=int, default=100, help='Número máximo de iteraciones ILS')
+    parser.add_argument('--max_iter_local', type=int, default=1000, help='It. max para búsqueda local interna')
+    args = parser.parse_args()
+
+    if args.ejemplar:
+        problema = Sudoku.from_file(args.ejemplar)
+    else:
+        # grid de ejemplo
+        grid_ejemplo = [
+            [1, 0, 0, 0, 0, 7, 0, 9, 0],
+            [0, 3, 0, 0, 2, 0, 0, 0, 8],
+            [0, 0, 9, 6, 0, 0, 5, 0, 0],
+            [0, 0, 5, 3, 0, 0, 9, 0, 0],
+            [0, 1, 0, 0, 8, 0, 0, 0, 2],
+            [6, 0, 0, 0, 0, 4, 0, 0, 0],
+            [3, 0, 0, 0, 0, 0, 0, 1, 0],
+            [0, 4, 0, 0, 0, 0, 0, 0, 7],
+            [0, 0, 7, 0, 0, 0, 3, 0, 0]
+        ]
+        problema = Sudoku(grid_ejemplo)
+
+    ils = BusquedaLocalIteradaSudoku(problema, seed=args.seed)
+    solucion, fitness, stats = ils.iterated_local_search(max_iter=args.max_iter, max_iter_local=args.max_iter_local)
+
     print(f"\nResultado final:")
     print(f"Fitness: {fitness}")
     print(f"Evaluaciones totales: {stats['evaluaciones_totales']}")
-    print(f"\nTablero final:")
-    print(solucion.get_grid())
+    print(f"Tablero final:\n{solucion.get_grid()}")
