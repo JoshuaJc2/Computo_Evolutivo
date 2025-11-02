@@ -32,6 +32,13 @@ class MemeticGeneticSudoku:
         if seed is not None:
             random.seed(seed)
             np.random.seed(seed)
+        
+        else:
+            # Generar semilla aleatoria
+            seed = random.randint(0, 2**32 - 1)
+            random.seed(seed)
+            np.random.seed(seed)
+            print(f"Semilla aleatoria generada: {seed}")
 
         # ILS instance for local improvements
         self.ils = BusquedaLocalIteradaSudoku(problem)
@@ -217,6 +224,7 @@ if __name__ == "__main__":
     mejor, fit, stats = ga_mem.run(verbose=True)
 
     print("\nResultado final:")
+    print(f"La semilla utilizada fue: {args.seed}")
     print(f"Fitness: {fit}")
     print(f"Evaluaciones totales: {stats['evaluaciones_totales']}")
     print(f"Generaciones ejecutadas: {stats['generaciones']}")

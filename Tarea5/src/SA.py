@@ -16,6 +16,12 @@ def recocido_simulado(problema, temp_inicial=100.0, alpha=0.9, max_iteraciones =
     if seed is not None:
         random.seed(seed)
         np.random.seed(seed)
+    else:
+        # Generar semilla aleatoria
+        seed = random.randint(0, 2**32 - 1)
+        random.seed(seed)
+        np.random.seed(seed)
+        print(f"Semilla aleatoria generada: {seed}")
 
     solucion_actual = SudokuSolution(problema)
     fitness_actual = solucion_actual.evaluate()
@@ -159,4 +165,3 @@ if __name__ == "__main__":
     print(f"Evaluaciones totales: {stats.get('evaluaciones_totales')}")
     print(f"Generaciones ejecutadas: {stats.get('generaciones')}")
     print(f"\nTablero final:\n{mejor.get_grid()}")
-

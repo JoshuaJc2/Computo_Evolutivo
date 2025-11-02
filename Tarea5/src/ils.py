@@ -19,6 +19,13 @@ class BusquedaLocalIteradaSudoku:
             _rand.seed(seed)
             _np.random.seed(seed)
         
+        else:
+            # Generar semilla aleatoria
+            seed = random.randint(0, 2**32 - 1)
+            random.seed(seed)
+            np.random.seed(seed)
+            print(f"Semilla aleatoria generada: {seed}")
+        
     def busqueda_local(self, solucion, max_iter=1000):
 
         mejor_solucion = solucion.copy()
