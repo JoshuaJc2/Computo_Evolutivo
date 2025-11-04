@@ -13,9 +13,10 @@ from sudoku import Sudoku
 from SA import recocido_simulado
 from ils import BusquedaLocalIteradaSudoku
 from memetico import MemeticGeneticSudoku
+import graficas
 
 
-def ejecutar_recocido_simulado(problema, num_ejecuciones=3):
+def ejecutar_recocido_simulado(problema, num_ejecuciones=30):
     """Ejecuta Recocido Simulado múltiples veces"""
     print(f"\n{'='*60}")
     print("  RECOCIDO SIMULADO")
@@ -81,7 +82,7 @@ def ejecutar_recocido_simulado(problema, num_ejecuciones=3):
     return stats_generales
 
 
-def ejecutar_ils(problema, num_ejecuciones=3):
+def ejecutar_ils(problema, num_ejecuciones=30):
     """Ejecuta Búsqueda Local Iterada múltiples veces"""
     print(f"\n{'='*60}")
     print("  BÚSQUEDA LOCAL ITERADA (ILS)")
@@ -138,7 +139,7 @@ def ejecutar_ils(problema, num_ejecuciones=3):
     return stats_generales
 
 
-def ejecutar_memetico(problema, num_ejecuciones=3):
+def ejecutar_memetico(problema, num_ejecuciones=30):
     """Ejecuta Algoritmo Genético Memético múltiples veces"""
     print(f"\n{'='*60}")
     print("  ALGORITMO GENÉTICO MEMÉTICO")
@@ -205,14 +206,24 @@ def ejecutar_memetico(problema, num_ejecuciones=3):
     return stats_generales
 
 
-def guardar_resultados_csv(resultados_sa, resultados_ils, resultados_mem):
-    """Guarda todos los resultados en CSV"""
+def guardar_resultados_csv(resultados_sa, resultados_ils, resultados_mem, ejemplar_name=None, output_dir=None):
+    """Guarda todos los resultados en CSV.
+    Si ejemplar_name se proporciona y/o output_dir se especifica, guarda en esa carpeta.
+    """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
-    # Crear directorio output si no existe
-    os.makedirs('../output', exist_ok=True)
-    
-    archivo = f'../output/experimentacion{timestamp}.csv'
+
+    # Determinar carpeta de salida
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+        base_dir = output_dir
+    else:
+        os.makedirs('../output', exist_ok=True)
+        base_dir = '../output'
+
+    tag = f"_{ejemplar_name}" if ejemplar_name else ""
+    # sanear tag (quitar barras)
+    tag = tag.replace('/', '_').replace('\\', '_')
+    archivo = os.path.join(base_dir, f'experimentacion{tag}_{timestamp}.csv')
     
     with open(archivo, 'w', newline='') as f:
         writer = csv.writer(f)
@@ -280,21 +291,28 @@ def guardar_resultados_csv(resultados_sa, resultados_ils, resultados_mem):
     return archivo
 
 
-def guardar_datos_pickle(resultados_sa, resultados_ils, resultados_mem):
+def guardar_datos_pickle(resultados_sa, resultados_ils, resultados_mem, ejemplar_name=None, output_dir=None):
     """Guarda datos completos en pickle para análisis posterior"""
-    os.makedirs('../output', exist_ok=True)
-    
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+        base_dir = output_dir
+    else:
+        os.makedirs('../output', exist_ok=True)
+        base_dir = '../output'
+
     datos = {
         'recocido_simulado': resultados_sa,
         'ils': resultados_ils,
         'memetico': resultados_mem,
         'fecha': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
-    
-    archivo = '../output/datos_experimentacion.pkl'
+
+    tag = f"_{ejemplar_name}" if ejemplar_name else ""
+    tag = tag.replace('/', '_').replace('\\', '_')
+    archivo = os.path.join(base_dir, f'datos_experimentacion{tag}.pkl')
     with open(archivo, 'wb') as f:
         pickle.dump(datos, f)
-    
+
     print(f"✓ Datos completos guardados en: {archivo}")
 
 
@@ -303,14 +321,32 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Ejecutar experimentos con SA, ILS y Memético para Sudoku')
     parser.add_argument('--ejemplar', type=str, default=None, 
                         help='Ruta al archivo del ejemplar de Sudoku')
-    parser.add_argument('--num_ejecuciones', type=int, default=3, 
+    parser.add_argument('--num_ejecuciones', type=int, default=30, 
                         help='Número de ejecuciones por algoritmo (default: 30)')
     args = parser.parse_args()
     
-    # Cargar problema
+    # Cargar problema(s)
+    script_dir = os.path.dirname(__file__)
+    ejemplares_dir = os.path.join(script_dir, 'Ejemplares')
+
     if args.ejemplar:
         problema = Sudoku.from_file(args.ejemplar)
+        ejemplar_name = os.path.splitext(os.path.basename(args.ejemplar))[0]
+        ejemplares_to_run = [(ejemplar_name, problema)]
         print(f"Ejemplar cargado desde: {args.ejemplar}")
+    elif os.path.isdir(ejemplares_dir):
+        # Recorrer todos los archivos en Ejemplares/
+        filenames = sorted([f for f in os.listdir(ejemplares_dir) if os.path.isfile(os.path.join(ejemplares_dir, f))])
+        ejemplares_to_run = []
+        for fn in filenames:
+            path = os.path.join(ejemplares_dir, fn)
+            try:
+                problema = Sudoku.from_file(path)
+                ejemplar_name = os.path.splitext(fn)[0]
+                ejemplares_to_run.append((ejemplar_name, problema))
+                print(f"Añadido ejemplar: {fn}")
+            except Exception as e:
+                print(f"Omitiendo {fn}: no se pudo cargar ({e})")
     else:
         # Grid de ejemplo
         grid = [
@@ -325,24 +361,45 @@ if __name__ == "__main__":
             [0, 0, 7, 0, 0, 0, 3, 0, 0]
         ]
         problema = Sudoku(grid)
+        ejemplares_to_run = [('ejemplo', problema)]
         print("Usando grid de ejemplo")
-    
-    print(f"\nTablero inicial:")
-    print(problema.grid)
-    print(f"\nEjecutando {args.num_ejecuciones} ejecuciones de cada algoritmo...")
-    
-    # Ejecutar experimentos
-    resultados_sa = ejecutar_recocido_simulado(problema, args.num_ejecuciones)
-    resultados_ils = ejecutar_ils(problema, args.num_ejecuciones)
-    resultados_mem = ejecutar_memetico(problema, args.num_ejecuciones)
-    
-    # Guardar resultados
-    print(f"\n{'='*60}")
-    print("GUARDANDO RESULTADOS")
-    print("="*60)
-    
-    guardar_resultados_csv(resultados_sa, resultados_ils, resultados_mem)
-    guardar_datos_pickle(resultados_sa,resultados_ils, resultados_mem)
+
+    # Ejecutar experimentos para cada ejemplar detectado
+    for ejemplar_name, problema in ejemplares_to_run:
+        print(f"\nTablero inicial ({ejemplar_name}):")
+        print(problema.grid)
+        print(f"\nEjecutando {args.num_ejecuciones} ejecuciones de cada algoritmo para: {ejemplar_name}...")
+
+        resultados_sa = ejecutar_recocido_simulado(problema, args.num_ejecuciones)
+        resultados_ils = ejecutar_ils(problema, args.num_ejecuciones)
+        resultados_mem = ejecutar_memetico(problema, args.num_ejecuciones)
+
+        # Guardar resultados para este ejemplar (incluye nombre en el archivo)
+        print(f"\n{'='*60}")
+        print(f"GUARDANDO RESULTADOS ({ejemplar_name})")
+        print("="*60)
+
+        # Calcular ruta absoluta de salida relativa al directorio del script.
+        # Esto evita que ejecutar `python3 src/experimentacion.py` desde la raíz
+        # coloque los resultados en `../output` relativo al CWD.
+        project_root = os.path.abspath(os.path.join(script_dir, '..'))
+        out_dir = os.path.join(project_root, 'output', ejemplar_name)
+        os.makedirs(out_dir, exist_ok=True)
+
+        # Guardar archivos (CSV y pickle) dentro de la subcarpeta del ejemplar
+        guardar_resultados_csv(resultados_sa, resultados_ils, resultados_mem, ejemplar_name=ejemplar_name, output_dir=out_dir)
+        guardar_datos_pickle(resultados_sa, resultados_ils, resultados_mem, ejemplar_name=ejemplar_name, output_dir=out_dir)
+
+        # Generar gráficas en la misma carpeta del ejemplar
+        try:
+            graficas.graficar_evolucion_aptitud_todos(resultados_sa, resultados_ils, resultados_mem, out_dir)
+            graficas.graficar_diversidad_todos(resultados_sa, resultados_ils, resultados_mem, out_dir)
+            graficas.graficar_aptitud_diversidad_todos(resultados_sa, resultados_ils, resultados_mem, out_dir)
+            graficas.graficar_calidad_ejecuciones_todos(resultados_sa, resultados_ils, resultados_mem, out_dir)
+            graficas.graficar_boxplot_comparacion(resultados_sa, resultados_ils, resultados_mem, out_dir)
+            graficas.graficar_entropia(resultados_sa, resultados_ils, resultados_mem, out_dir)
+        except Exception as e:
+            print(f"Error generando gráficas para {ejemplar_name}: {e}")
     
     # Resumen final
     print(f"\n{'='*60}")

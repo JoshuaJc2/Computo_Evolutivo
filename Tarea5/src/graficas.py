@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 import sys
+import os
 from scipy.stats import entropy
 
 
@@ -18,6 +19,14 @@ def cargar_datos():
     except FileNotFoundError:
         print("ERROR: Primero ejecuta 'python experimentacion.py'")
         sys.exit(1)
+def cargar_datos(path='../output/datos_experimentacion.pkl'):
+    """Carga datos desde un pickle dado (ruta por defecto: ../output/datos_experimentacion.pkl)"""
+    try:
+        with open(path, 'rb') as f:
+            return pickle.load(f)
+    except FileNotFoundError:
+        print(f"ERROR: No se encontró el archivo de datos: {path}")
+        raise
 
 
 def distancia_hamming(sol1, sol2):
@@ -90,7 +99,7 @@ def calcular_entropia_poblacion(soluciones):
 # GRÁFICA 1: Evolución de aptitud - TODOS los algoritmos juntos
 # ============================================================================
 
-def graficar_evolucion_aptitud_todos(resultados_sa, resultados_ils, resultados_mem):
+def graficar_evolucion_aptitud_todos(resultados_sa, resultados_ils, resultados_mem, output_dir):
     """
     GRÁFICA 1: Evolución de aptitud de los 3 algoritmos en una sola gráfica
     """
@@ -126,7 +135,7 @@ def graficar_evolucion_aptitud_todos(resultados_sa, resultados_ils, resultados_m
     ax.grid(True, alpha=0.3, linestyle='--')
     
     plt.tight_layout()
-    plt.savefig('../output/1_evolucion_aptitud_todos.png', dpi=300)
+    plt.savefig(os.path.join(output_dir, '1_evolucion_aptitud_todos.png'), dpi=300)
     plt.close()
     print("   1_evolucion_aptitud_todos.png")
 
@@ -135,7 +144,7 @@ def graficar_evolucion_aptitud_todos(resultados_sa, resultados_ils, resultados_m
 # GRÁFICA 2: Diversidad (Hamming y Euclidiana)
 # ============================================================================
 
-def graficar_diversidad_todos(resultados_sa, resultados_ils, resultados_mem):
+def graficar_diversidad_todos(resultados_sa, resultados_ils, resultados_mem, output_dir):
     """
     GRÁFICA 2: Evolución de diversidad de los 3 algoritmos
     """
@@ -183,7 +192,7 @@ def graficar_diversidad_todos(resultados_sa, resultados_ils, resultados_mem):
     plt.suptitle('Análisis de Diversidad - Dos Medidas de Distancia',
                  fontsize=16, fontweight='bold', y=0.98)
     plt.tight_layout()
-    plt.savefig('../output/2_diversidad_todos.png', dpi=300)
+    plt.savefig(os.path.join(output_dir, '2_diversidad_todos.png'), dpi=300)
     plt.close()
     print("   2_diversidad_todos.png")
 
@@ -192,7 +201,7 @@ def graficar_diversidad_todos(resultados_sa, resultados_ils, resultados_mem):
 # GRÁFICA 3: Aptitud y Diversidad combinadas (3 subplots)
 # ============================================================================
 
-def graficar_aptitud_diversidad_todos(resultados_sa, resultados_ils, resultados_mem):
+def graficar_aptitud_diversidad_todos(resultados_sa, resultados_ils, resultados_mem, output_dir):
     """
     GRÁFICA 3: Aptitud y Diversidad combinadas (3 subplots, uno por algoritmo)
     """
@@ -245,7 +254,7 @@ def graficar_aptitud_diversidad_todos(resultados_sa, resultados_ils, resultados_
     plt.suptitle('Evolución de Aptitud y Diversidad por Algoritmo', 
                  fontsize=16, fontweight='bold', y=1.02)
     plt.tight_layout()
-    plt.savefig('../output/3_aptitud_diversidad_todos.png', dpi=300)
+    plt.savefig(os.path.join(output_dir, '3_aptitud_diversidad_todos.png'), dpi=300)
     plt.close()
     print("   3_aptitud_diversidad_todos.png")
 
@@ -254,7 +263,7 @@ def graficar_aptitud_diversidad_todos(resultados_sa, resultados_ils, resultados_
 # GRÁFICA 4: Calidad de ejecuciones (3 subplots)
 # ============================================================================
 
-def graficar_calidad_ejecuciones_todos(resultados_sa, resultados_ils, resultados_mem):
+def graficar_calidad_ejecuciones_todos(resultados_sa, resultados_ils, resultados_mem, output_dir):
     """
     GRÁFICA 4: Calidad de ejecuciones (3 subplots, uno por algoritmo)
     Muestra todas las ejecuciones individuales
@@ -300,7 +309,7 @@ def graficar_calidad_ejecuciones_todos(resultados_sa, resultados_ils, resultados
     plt.suptitle('Calidad de Ejecuciones por Algoritmo', 
                  fontsize=16, fontweight='bold', y=1.02)
     plt.tight_layout()
-    plt.savefig('../output/4_calidad_ejecuciones_todos.png', dpi=300)
+    plt.savefig(os.path.join(output_dir, '4_calidad_ejecuciones_todos.png'), dpi=300)
     plt.close()
     print("   4_calidad_ejecuciones_todos.png")
 
@@ -309,7 +318,7 @@ def graficar_calidad_ejecuciones_todos(resultados_sa, resultados_ils, resultados
 # GRÁFICA 5: BoxPlot comparativo
 # ============================================================================
 
-def graficar_boxplot_comparacion(resultados_sa, resultados_ils, resultados_mem):
+def graficar_boxplot_comparacion(resultados_sa, resultados_ils, resultados_mem, output_dir):
     """
     GRÁFICA 5: BoxPlot comparando los 3 algoritmos
     """
@@ -360,7 +369,7 @@ def graficar_boxplot_comparacion(resultados_sa, resultados_ils, resultados_mem):
                 bbox=dict(boxstyle='round', facecolor='white', alpha=0.7))
     
     plt.tight_layout()
-    plt.savefig('../output/5_boxplot_comparacion.png', dpi=300)
+    plt.savefig(os.path.join(output_dir, '5_boxplot_comparacion.png'), dpi=300)
     plt.close()
     print("   5_boxplot_comparacion.png")
 
@@ -369,7 +378,7 @@ def graficar_boxplot_comparacion(resultados_sa, resultados_ils, resultados_mem):
 # GRÁFICA 6: Entropía
 # ============================================================================
 
-def graficar_entropia(resultados_sa, resultados_ils, resultados_mem):
+def graficar_entropia(resultados_sa, resultados_ils, resultados_mem, output_dir):
     """Gráfica de entropía"""
     fig, ax = plt.subplots(figsize=(12, 7))
     
@@ -400,7 +409,7 @@ def graficar_entropia(resultados_sa, resultados_ils, resultados_mem):
     ax.grid(True, alpha=0.3, axis='y', linestyle='--')
     
     plt.tight_layout()
-    plt.savefig('../output/6_entropia.png', dpi=300)
+    plt.savefig(os.path.join(output_dir, '6_entropia.png'), dpi=300)
     plt.close()
     print("   6_entropia.png")
 
@@ -417,13 +426,15 @@ def main():
     resultados_mem = datos['memetico']
     
     print("Generando gráficas...\n")
-    
-    graficar_evolucion_aptitud_todos(resultados_sa, resultados_ils, resultados_mem)
-    graficar_diversidad_todos(resultados_sa, resultados_ils, resultados_mem)
-    graficar_aptitud_diversidad_todos(resultados_sa, resultados_ils, resultados_mem)
-    graficar_calidad_ejecuciones_todos(resultados_sa, resultados_ils, resultados_mem)
-    graficar_boxplot_comparacion(resultados_sa, resultados_ils, resultados_mem)
-    graficar_entropia(resultados_sa, resultados_ils, resultados_mem)
+    output_dir = os.path.join('..', 'output')
+    os.makedirs(output_dir, exist_ok=True)
+
+    graficar_evolucion_aptitud_todos(resultados_sa, resultados_ils, resultados_mem, output_dir)
+    graficar_diversidad_todos(resultados_sa, resultados_ils, resultados_mem, output_dir)
+    graficar_aptitud_diversidad_todos(resultados_sa, resultados_ils, resultados_mem, output_dir)
+    graficar_calidad_ejecuciones_todos(resultados_sa, resultados_ils, resultados_mem, output_dir)
+    graficar_boxplot_comparacion(resultados_sa, resultados_ils, resultados_mem, output_dir)
+    graficar_entropia(resultados_sa, resultados_ils, resultados_mem, output_dir)
     
     print("\n" + "="*70)
     print("   GRÁFICAS COMPLETADAS")

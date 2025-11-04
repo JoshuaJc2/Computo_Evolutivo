@@ -1,0 +1,20 @@
+RESULTADOS EXPERIMENTALES - SUDOKU
+Fecha: 2025-11-03 16:36:06
+
+RECOCIDO SIMULADO - Ejecuciones Individuales
+Ejecucion,Fitness,Evaluaciones,Generaciones,Tiempo(s),Seed
+1,7.00,27136,256,4.02,3809653194
+
+BÚSQUEDA LOCAL ITERADA - Ejecuciones Individuales
+Ejecucion,Fitness,Evaluaciones,Iteraciones,Seed
+1,15.00,70939,1001,
+
+ALGORITMO MEMÉTICO - Ejecuciones Individuales
+Ejecucion,Fitness,Evaluaciones,Generaciones
+1,7.00,132329,100
+
+RESUMEN COMPARATIVO
+Algoritmo,Mejor,Peor,Promedio,Mediana,Desv.Est.,Óptimas
+Recocido Simulado,7.00,7.00,7.00,7.00,0.00,0
+ILS,15.00,15.00,15.00,15.00,0.00,0
+Memético,7.00,7.00,7.00,7.00,0.00,0
