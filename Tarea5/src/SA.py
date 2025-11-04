@@ -48,6 +48,10 @@ def recocido_simulado(problema, temp_inicial=100.0, alpha=0.9, max_iteraciones =
     total_it_markov = 0
     start_time = time.time()
 
+    # Historiales por iteración (para graficar evolución)
+    historia_actual = [fitness_actual]
+    historia_mejor = [mejor_fitness]
+
     print(f"Iniciando SA con Markov Chain y Reheating Decreciente:")
     print(f"  T_inicial: {temp_inicial:.2f}, Alpha: {alpha}")
     print(f"  Markov Length: {markov_length}")
@@ -102,6 +106,9 @@ def recocido_simulado(problema, temp_inicial=100.0, alpha=0.9, max_iteraciones =
             temperatura = enfriamiento_geometrico(temperatura, alpha)
 
         iteracion += 1
+        # Registrar históricos al final de cada iteración externa
+        historia_actual.append(fitness_actual)
+        historia_mejor.append(mejor_fitness)
         # Mostrar progreso cada 100 iteraciones externas
         if iteracion % 100 == 0:
             print(f"  Iter {iteracion}: T={temperatura:.3f}, "
@@ -120,6 +127,10 @@ def recocido_simulado(problema, temp_inicial=100.0, alpha=0.9, max_iteraciones =
         'time': elapsed,
         'seed': seed
     }
+
+    # Adjuntar históricos para análisis/plotting
+    estadisticas['historia_actual'] = historia_actual
+    estadisticas['historia_mejor'] = historia_mejor
 
     return mejor_solucion, mejor_fitness, estadisticas
 

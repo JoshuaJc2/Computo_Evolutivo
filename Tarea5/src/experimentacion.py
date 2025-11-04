@@ -51,6 +51,9 @@ def ejecutar_recocido_simulado(problema, num_ejecuciones=30):
             'generaciones': stats['generaciones'],
             'tiempo': stats['time'],
             'seed': stats['seed'],
+            # historiales por iteración (si el algoritmo los devuelve)
+            'historia_mejor': stats.get('historia_mejor'),
+            'historia_actual': stats.get('historia_actual'),
             'solucion': mejor
         }
         resultados.append(resultado)
@@ -108,6 +111,9 @@ def ejecutar_ils(problema, num_ejecuciones=30):
             'evaluaciones': stats['evaluaciones_totales'],
             'iteraciones': stats['iteraciones_totales'],
             'seed': stats['seed'],
+            # historiales por iteración (si los devuelve ILS)
+            'historia_mejor': stats.get('historia_mejor') or stats.get('historia_fitness'),
+            'historia_actual': stats.get('historia_actual'),
             'solucion': mejor
         }
         resultados.append(resultado)
@@ -419,6 +425,12 @@ if __name__ == "__main__":
                 # Solo generar la gráfica específica del memético
                 graficas.graficar_evolucion_memetico(resultados_mem, out_dir)
             else:
+                # Gráfica comparativa por iteración (mejor vs activo/promedio)
+                try:
+                    graficas.graficar_evolucion_comparativa_iter(resultados_sa, resultados_ils, resultados_mem, out_dir)
+                except Exception as _e:
+                    print(f"Advertencia generando gráfica comparativa por iteración: {_e}")
+
                 graficas.graficar_evolucion_aptitud_todos(resultados_sa, resultados_ils, resultados_mem, out_dir)
                 graficas.graficar_diversidad_todos(resultados_sa, resultados_ils, resultados_mem, out_dir)
                 graficas.graficar_aptitud_diversidad_todos(resultados_sa, resultados_ils, resultados_mem, out_dir)

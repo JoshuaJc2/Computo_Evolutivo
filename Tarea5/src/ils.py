@@ -79,6 +79,7 @@ class BusquedaLocalIteradaSudoku:
         # Estadísticas
         evaluaciones_totales = evals
         historia_fitness = [mejor_fitness]
+        historia_actual = [fitness_actual]
         iteraciones_sin_mejora = 0
         
         
@@ -108,6 +109,7 @@ class BusquedaLocalIteradaSudoku:
             
             
             historia_fitness.append(mejor_fitness)
+            historia_actual.append(fitness_actual)
             
             # Imprimir progreso
             if t % 10 == 0:
@@ -125,6 +127,8 @@ class BusquedaLocalIteradaSudoku:
         estadisticas = {
             'evaluaciones_totales': evaluaciones_totales,
             'historia_fitness': historia_fitness,
+            'historia_mejor': historia_fitness,
+            'historia_actual': historia_actual,
             'iteraciones_totales': t,
             'seed': self.seed
         }

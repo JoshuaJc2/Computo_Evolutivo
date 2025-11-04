@@ -208,6 +208,78 @@ def graficar_evolucion_memetico(resultados_mem, output_dir):
     print(f"   {os.path.basename(outpath)}")
 
 
+def graficar_evolucion_comparativa_iter(resultados_sa, resultados_ils, resultados_mem, output_dir):
+    """
+    Genera una figura con 3 subplots (uno por algoritmo) mostrando:
+      - línea de la aptitud de la solución activa / promedio (color)
+      - línea del mejor-so-far por iteración (negro grueso)
+
+    Está pensada para num_ejecuciones=1 (trayectorias individuales), pero
+    también promedia si hay varias ejecuciones.
+    """
+    fig, axes = plt.subplots(3, 1, figsize=(12, 14), sharex=False)
+
+    datos = [
+        ('Recocido Simulado', resultados_sa, axes[0]),
+        ('Búsqueda Local Iterada', resultados_ils, axes[1]),
+        ('Algoritmo Memético', resultados_mem, axes[2])
+    ]
+
+    colores = {'Recocido Simulado': '#E63946', 'Búsqueda Local Iterada': '#F77F00', 'Algoritmo Memético': '#06A77D'}
+
+    for nombre, resultado, ax in datos:
+        ejecuciones = resultado.get('ejecuciones', [])
+        if not ejecuciones:
+            ax.set_title(f"{nombre} (sin ejecuciones)")
+            ax.grid(True, alpha=0.3)
+            continue
+
+        all_hist_mejor = []
+        all_hist_act = []
+        for ejec in ejecuciones:
+            # mejor
+            hist_mejor = ejec.get('historia_mejor') or ejec.get('historia_fitness')
+            # activo/promedio: memetico usa 'historia_promedio'
+            if nombre == 'Algoritmo Memético':
+                hist_act = ejec.get('historia_promedio')
+            else:
+                hist_act = ejec.get('historia_actual')
+
+            if hist_mejor is not None:
+                all_hist_mejor.append(list(hist_mejor))
+            if hist_act is not None:
+                all_hist_act.append(list(hist_act))
+
+        if not all_hist_mejor and not all_hist_act:
+            ax.set_title(f"{nombre} (no hay historiales por iteración)")
+            ax.grid(True, alpha=0.3)
+            continue
+
+        # Si hay múltiples ejecuciones, truncar a la mínima longitud y promediar
+        if all_hist_mejor:
+            min_len_mejor = min(len(h) for h in all_hist_mejor)
+            mean_mejor = np.mean([h[:min_len_mejor] for h in all_hist_mejor], axis=0)
+            ax.plot(range(min_len_mejor), mean_mejor, color='black', linewidth=3, label='Mejor (media ejecuciones)')
+
+        if all_hist_act:
+            min_len_act = min(len(h) for h in all_hist_act)
+            mean_act = np.mean([h[:min_len_act] for h in all_hist_act], axis=0)
+            ax.plot(range(min_len_act), mean_act, color=colores[nombre], linewidth=2.2, label='Activo / Promedio')
+
+        ax.set_title(f'Evolución por iteración - {nombre}', fontsize=12, fontweight='bold')
+        ax.set_xlabel('Iteración / Generación', fontsize=11)
+        ax.set_ylabel('Fitness', fontsize=11)
+        ax.invert_yaxis()
+        ax.grid(True, alpha=0.25, linestyle='--')
+        ax.legend(fontsize=9)
+
+    plt.tight_layout()
+    outpath = os.path.join(output_dir, 'evolucion_comparativa_iteraciones.png')
+    plt.savefig(outpath, dpi=300)
+    plt.close()
+    print(f"   {os.path.basename(outpath)}")
+
+
 # ============================================================================
 # GRÁFICA 2: Diversidad (Hamming y Euclidiana)
 # ============================================================================
