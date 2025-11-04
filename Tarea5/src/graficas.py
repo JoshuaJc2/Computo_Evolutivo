@@ -139,6 +139,74 @@ def graficar_evolucion_aptitud_todos(resultados_sa, resultados_ils, resultados_m
     plt.close()
     print("   1_evolucion_aptitud_todos.png")
 
+# ============================================================================
+# GRÁFICA EXTRA: Evolución de aptitud - Memético
+# ============================================================================
+
+def graficar_evolucion_memetico(resultados_mem, output_dir):
+    """
+    Gráfica especializada para el memético: muestra la evolución por generación
+    de la aptitud de la mejor solución y de la aptitud promedio de la población
+    para cada ejecución (líneas sobrepuestas).
+    """
+    ejecuciones = resultados_mem['ejecuciones']
+    if not ejecuciones:
+        print("No hay ejecuciones para memético")
+        return
+
+    # Preparar figura con dos subplots (mejor y promedio)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
+
+    all_hist_mejor = []
+    all_hist_prom = []
+    for idx, ejec in enumerate(ejecuciones):
+        hist_mejor = ejec.get('historia_mejor')
+        hist_prom = ejec.get('historia_promedio')
+        if hist_mejor is None and hist_prom is None:
+            # intentar leer en 'stats' si está anidado
+            stats = ejec.get('stats', {})
+            hist_mejor = stats.get('historia_fitness')
+            hist_prom = stats.get('historia_promedio')
+
+        if hist_mejor:
+            generations = list(range(len(hist_mejor)))
+            ax1.plot(generations, hist_mejor, alpha=0.4, label=f'Ejec {ejec.get("ejecucion")}', linewidth=1)
+            all_hist_mejor.append(hist_mejor)
+
+        if hist_prom:
+            generations_prom = list(range(len(hist_prom)))
+            ax2.plot(generations_prom, hist_prom, alpha=0.4, label=f'Ejec {ejec.get("ejecucion")}', linewidth=1)
+            all_hist_prom.append(hist_prom)
+
+    # Promedio a través de ejecuciones (trazar si hay varias longitudes las truncamos a la mínima)
+    if all_hist_mejor:
+        min_len = min(len(h) for h in all_hist_mejor)
+        mean_mejor = np.mean([h[:min_len] for h in all_hist_mejor], axis=0)
+        ax1.plot(range(min_len), mean_mejor, color='black', linewidth=3, label='Media ejecuciones')
+
+    if all_hist_prom:
+        min_len = min(len(h) for h in all_hist_prom)
+        mean_prom = np.mean([h[:min_len] for h in all_hist_prom], axis=0)
+        ax2.plot(range(min_len), mean_prom, color='black', linewidth=3, label='Media ejecuciones')
+
+    ax1.set_ylabel('Fitness mejor (por generación)', fontsize=12, fontweight='bold')
+    ax1.set_title('Evolución - Memético: Mejor por generación', fontsize=14, fontweight='bold')
+    ax1.invert_yaxis()  # fitness menor es mejor (si aplica)
+    ax1.grid(True, alpha=0.3, linestyle='--')
+    ax1.legend(fontsize=8)
+
+    ax2.set_xlabel('Generación', fontsize=12, fontweight='bold')
+    ax2.set_ylabel('Fitness promedio (por generación)', fontsize=12, fontweight='bold')
+    ax2.set_title('Evolución - Memético: Promedio de población por generación', fontsize=14, fontweight='bold')
+    ax2.grid(True, alpha=0.3, linestyle='--')
+    ax2.legend(fontsize=8)
+
+    plt.tight_layout()
+    outpath = os.path.join(output_dir, 'memetico_evolucion_generaciones.png')
+    plt.savefig(outpath, dpi=300)
+    plt.close()
+    print(f"   {os.path.basename(outpath)}")
+
 
 # ============================================================================
 # GRÁFICA 2: Diversidad (Hamming y Euclidiana)

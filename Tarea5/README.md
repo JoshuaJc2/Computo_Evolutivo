@@ -8,5 +8,12 @@ python3 src/memetico.py --ejemplar src/Ejemplares/SD2.txt --pop_size 100 --max_i
 
 python3 src/SA.py --ejemplar src/Ejemplares/SD2.txt --max_iter 1000
 
-
 python3 src/memetico.py --ejemplar src/Ejemplares/Easy1.txt --max_iter 1000 --max_iter_local 1000
+
+
+----------------------------------------
+
+python src/experimentacion.py --num_ejecuciones 3
+
+
+python src/experimentacion.py --ejemplar src/Ejemplares/Easy1.txt --num_ejecuciones 3

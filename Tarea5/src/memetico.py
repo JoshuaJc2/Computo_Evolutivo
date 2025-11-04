@@ -106,7 +106,10 @@ class MemeticGeneticSudoku:
 
         mejor = min(poblacion, key=lambda s: s.evaluate())
         mejor_fit = mejor.evaluate()
+        # historial del mejor por generación
         historia_fitness = [mejor_fit]
+        # historial del fitness promedio de la población por generación
+        historia_promedio = [np.mean(fitnesses) if len(fitnesses) > 0 else 0.0]
 
         if verbose:
             print(f"Búsqueda inicial: Fitness = {mejor_fit:.2f}")
@@ -168,7 +171,9 @@ class MemeticGeneticSudoku:
                 mejor, mejor_fit = cand, cand_fit
 
             poblacion, fitnesses = nueva, nuevos_fitnesses
+            # registrar historia
             historia_fitness.append(mejor_fit)
+            historia_promedio.append(np.mean(fitnesses) if len(fitnesses) > 0 else 0.0)
 
             if verbose and gen % 10 == 0:
                 print(f"Generación {gen}: Mejor fitness = {mejor_fit:.2f} (evals totales {total_evaluaciones})")
@@ -181,12 +186,13 @@ class MemeticGeneticSudoku:
         estadisticas = {
             'evaluaciones_totales': total_evaluaciones,
             'historia_fitness': historia_fitness,
+            'historia_promedio': historia_promedio,
             'generaciones': gen
         }
         return mejor, mejor_fit, estadisticas
 
 
-# Ejemplo de uso / CLI simple
+# Ejemplo de uso
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='Ejecutar algoritmo memético para un ejemplar de sudoku')
