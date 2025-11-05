@@ -99,10 +99,15 @@ class MemeticGeneticSudoku:
         return nueva_poblacion, nuevos_fitnesses
 
     # Bucle principal
-    def run(self, verbose=True):
+    def run(self, verbose=True, save_poblaciones=False):
         poblacion = self.inicializar_poblacion()
         fitnesses, evals = self.evaluar_poblacion(poblacion)
         total_evaluaciones = evals
+
+        poblaciones_hist = []
+        if save_poblaciones:
+            # almacenar una copia de la población inicial
+            poblaciones_hist.append([ind.copy() for ind in poblacion])
 
         mejor = min(poblacion, key=lambda s: s.evaluate())
         mejor_fit = mejor.evaluate()
@@ -175,6 +180,9 @@ class MemeticGeneticSudoku:
             historia_fitness.append(mejor_fit)
             historia_promedio.append(np.mean(fitnesses) if len(fitnesses) > 0 else 0.0)
 
+            if save_poblaciones:
+                poblaciones_hist.append([ind.copy() for ind in poblacion])
+
             if verbose and gen % 10 == 0:
                 print(f"Generación {gen}: Mejor fitness = {mejor_fit:.2f} (evals totales {total_evaluaciones})")
 
@@ -189,6 +197,8 @@ class MemeticGeneticSudoku:
             'historia_promedio': historia_promedio,
             'generaciones': gen
         }
+        if save_poblaciones:
+            estadisticas['poblaciones'] = poblaciones_hist
         return mejor, mejor_fit, estadisticas
 
 

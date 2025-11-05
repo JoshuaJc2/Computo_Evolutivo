@@ -10,7 +10,8 @@ def enfriamiento_geometrico(temperatura, alpha):
 def recocido_simulado(problema, temp_inicial=100.0, alpha=0.9, max_iteraciones = 1000,
                       markov_length=None, max_estancamiento = 650,
                       initial_reheat_factor=3.0, min_reheat_factor=1.5,
-                      seed: int = None, max_evaluaciones: int = None):
+                      seed: int = None, max_evaluaciones: int = None,
+                      save_trayectoria: bool = False, trayectoria_cada: int = 1):
     # Inicialización
     # reproducibilidad
     if seed is not None:
@@ -56,6 +57,7 @@ def recocido_simulado(problema, temp_inicial=100.0, alpha=0.9, max_iteraciones =
     print(f"  T_inicial: {temp_inicial:.2f}, Alpha: {alpha}")
     print(f"  Markov Length: {markov_length}")
     print(f"  Reheat inicial: {initial_reheat_factor}x, Reheat final: {min_reheat_factor}x")
+    trayectoria_soluciones = [] if save_trayectoria else None
 
     # Ciclo principal
     while temperatura > 1e-4 and mejor_fitness > 0 and iteracion < max_iteraciones:
@@ -109,6 +111,11 @@ def recocido_simulado(problema, temp_inicial=100.0, alpha=0.9, max_iteraciones =
         # Registrar históricos al final de cada iteración externa
         historia_actual.append(fitness_actual)
         historia_mejor.append(mejor_fitness)
+        if save_trayectoria and (iteracion % max(1, trayectoria_cada) == 0):
+            try:
+                trayectoria_soluciones.append(np.array(solucion_actual.values, dtype=np.int32))
+            except Exception:
+                pass
         # Mostrar progreso cada 100 iteraciones externas
         if iteracion % 100 == 0:
             print(f"  Iter {iteracion}: T={temperatura:.3f}, "
@@ -131,6 +138,8 @@ def recocido_simulado(problema, temp_inicial=100.0, alpha=0.9, max_iteraciones =
     # Adjuntar históricos para análisis/plotting
     estadisticas['historia_actual'] = historia_actual
     estadisticas['historia_mejor'] = historia_mejor
+    if save_trayectoria:
+        estadisticas['trayectoria_soluciones'] = trayectoria_soluciones or []
 
     return mejor_solucion, mejor_fitness, estadisticas
 

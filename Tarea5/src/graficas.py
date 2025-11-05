@@ -554,6 +554,138 @@ def graficar_entropia(resultados_sa, resultados_ils, resultados_mem, output_dir)
     print("   6_entropia.png")
 
 
+def graficar_entropia_evolucion(resultados_sa, resultados_ils, resultados_mem, output_dir):
+    """Genera 3 gráficas separadas de la evolución de la entropía (una por algoritmo).
+
+        Para cada algoritmo, intenta primero usar poblaciones por iteración/generación.
+        Si no existen, usa trayectorias de soluciones (cohortes entre ejecuciones).
+        Archivos de salida:
+            - 6_entropia_evolucion_sa.png
+            - 6_entropia_evolucion_ils.png
+            - 6_entropia_evolucion_memetico.png
+    """
+    def calcular_entropia_por_iteracion(resultados):
+        # Cada ejecución puede contener una lista de poblaciones por generación.
+        # Buscamos varias formas comunes de almacenarlo.
+
+        # Helper vectorizado: entropía promedio entre pares a partir de una población
+        def _entropia_promedio_poblacion_fast(poblacion):
+            try:
+                # Convertir a matriz (n_individuos, longitud_gen)
+                arr = np.array([
+                    np.asarray(getattr(sol, 'values', sol), dtype=np.int32)
+                    for sol in poblacion
+                ], dtype=np.int32)
+            except Exception:
+                return 0.0
+
+            if arr.ndim != 2 or arr.shape[0] < 2:
+                return 0.0
+
+            n, L = arr.shape
+            # Matriz de distancias de Hamming por pares (vectorizado)
+            # (n,1,L) != (1,n,L) -> (n,n,L) y luego sumamos en eje de genes
+            dif = (arr[:, None, :] != arr[None, :, :])
+            d = dif.sum(axis=2)  # (n,n)
+            # Usar solo triángulo superior (i<j)
+            iu = np.triu_indices(n, k=1)
+            d_flat = d[iu].astype(np.float64)
+            if d_flat.size == 0:
+                return 0.0
+            p = d_flat / float(L)
+            # Entropía binaria H(p) de forma estable
+            eps = 1e-12
+            p = np.clip(p, eps, 1 - eps)
+            h = -(p * np.log2(p) + (1 - p) * np.log2(1 - p))
+            return float(h.mean())
+
+        entropias_por_ejec = []
+        for ejec in resultados.get('ejecuciones', []):
+            poblaciones = ejec.get('poblaciones')
+            if poblaciones is None:
+                # intentar en stats anidado
+                stats = ejec.get('stats') or {}
+                poblaciones = stats.get('poblaciones')
+
+            # a veces la estructura viene como lista de listas de soluciones
+            if poblaciones and isinstance(poblaciones, list):
+                entropias_ejec = []
+                for pobl in poblaciones:
+                    # Cálculo vectorizado por generación
+                    entropias_ejec.append(_entropia_promedio_poblacion_fast(pobl))
+                if entropias_ejec:
+                    entropias_por_ejec.append(entropias_ejec)
+
+        # Si no hay poblaciones por ejecución, intentar con trayectorias (cohortes entre ejecuciones)
+        if not entropias_por_ejec:
+            trayectorias = []
+            for ejec in resultados.get('ejecuciones', []):
+                tray = ejec.get('trayectoria_soluciones')
+                if tray is None:
+                    stats = ejec.get('stats') or {}
+                    tray = stats.get('trayectoria_soluciones')
+                if tray and isinstance(tray, list) and len(tray) > 0:
+                    trayectorias.append(tray)
+
+            if not trayectorias:
+                return []
+
+            # Longitud común mínima
+            min_len = min(len(tr) for tr in trayectorias)
+            if min_len < 1:
+                return []
+
+            entropia_por_t = []
+            for t in range(min_len):
+                # Cohorte en iteración t: tomar la solución de cada ejecución en t
+                pobl_t = []
+                for tr in trayectorias:
+                    try:
+                        pobl_t.append(np.asarray(tr[t], dtype=np.int32))
+                    except Exception:
+                        pass
+                if len(pobl_t) >= 2:
+                    entropia_por_t.append(_entropia_promedio_poblacion_fast(pobl_t))
+                else:
+                    entropia_por_t.append(0.0)
+            return entropia_por_t
+
+        # Alinear longitudes (truncar a la mínima) y promediar por posición
+        min_len = min(len(e) for e in entropias_por_ejec)
+        aligned = [e[:min_len] for e in entropias_por_ejec]
+        promedio = [float(sum(vals)) / len(vals) for vals in zip(*aligned)]
+        return promedio
+
+    ent_sa = calcular_entropia_por_iteracion(resultados_sa)
+    ent_ils = calcular_entropia_por_iteracion(resultados_ils)
+    ent_mem = calcular_entropia_por_iteracion(resultados_mem)
+
+    def _plot_single(series, titulo, color, filename):
+        if not series:
+            print(f"   (info) No hay datos para {titulo}; se omite {filename}")
+            return False
+        fig, ax = plt.subplots(figsize=(12, 7))
+        ax.plot(range(1, len(series) + 1), series, color=color, linewidth=2.2)
+        ax.set_xlabel('Iteraciones / Generaciones', fontsize=13, fontweight='bold')
+        ax.set_ylabel('Entropía (bits)', fontsize=13, fontweight='bold')
+        ax.set_title(f'Evolución de la Entropía - {titulo}', fontsize=16, fontweight='bold', pad=20)
+        ax.grid(True, alpha=0.3, linestyle='--')
+        plt.tight_layout()
+        outpath = os.path.join(output_dir, filename)
+        plt.savefig(outpath, dpi=300)
+        plt.close()
+        print(f"   {filename}")
+        return True
+
+    any_plotted = False
+    any_plotted |= _plot_single(ent_sa, 'Recocido Simulado', '#E63946', '6_entropia_evolucion_sa.png')
+    any_plotted |= _plot_single(ent_ils, 'Búsqueda Local Iterada', '#F77F00', '6_entropia_evolucion_ils.png')
+    any_plotted |= _plot_single(ent_mem, 'Algoritmo Memético', '#06A77D', '6_entropia_evolucion_memetico.png')
+
+    if not any_plotted:
+        print('   (warn) No se generó ninguna gráfica de evolución de entropía (sin datos en SA/ILS/Memético).')
+
+
 def main():
     """Genera las gráficas consolidadas"""
     print("\n" + "="*70)
@@ -575,6 +707,8 @@ def main():
     graficar_calidad_ejecuciones_todos(resultados_sa, resultados_ils, resultados_mem, output_dir)
     graficar_boxplot_comparacion(resultados_sa, resultados_ils, resultados_mem, output_dir)
     graficar_entropia(resultados_sa, resultados_ils, resultados_mem, output_dir)
+    # Evolución de la entropía (líneas) - requiere poblaciones por iteración en los datos
+    graficar_entropia_evolucion(resultados_sa, resultados_ils, resultados_mem, output_dir)
     
     print("\n" + "="*70)
     print("   GRÁFICAS COMPLETADAS")

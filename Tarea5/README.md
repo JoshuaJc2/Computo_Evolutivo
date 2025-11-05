@@ -17,3 +17,14 @@ python src/experimentacion.py --num_ejecuciones 3
 
 
 python src/experimentacion.py --ejemplar src/Ejemplares/Easy1.txt --num_ejecuciones 3
+
+
+python3 src/experimentacion.py --ejemplar src/Ejemplares/Easy1.txt --num_ejecuciones 30 --only_ils
+
+python3 src/experimentacion.py --num_ejecuciones 30 --only_sa
+
+python3 src/experimentacion.py --num_ejecuciones 30 --only_ils
+
+python3 src/experimentacion.py --num_ejecuciones 30 --only_memetico
+
+python3 src/experimentacion.py --num_ejecuciones 30 --save_poblaciones

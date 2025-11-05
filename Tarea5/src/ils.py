@@ -4,7 +4,7 @@ from collections import Counter
 from sudoku import Sudoku, SudokuSolution
 
 class BusquedaLocalIteradaSudoku:
-    def __init__(self, problema_sudoku, seed: int = None):
+    def __init__(self, problema_sudoku, seed: int = None, save_trayectoria: bool = False, trayectoria_cada: int = 1):
         """
         Inicializa la búsqueda local iterada para Sudoku
         
@@ -12,6 +12,8 @@ class BusquedaLocalIteradaSudoku:
             problema_sudoku: Instancia de la clase Sudoku
         """
         self.problema = problema_sudoku
+        self._save_trayectoria = save_trayectoria
+        self._trayectoria_cada = max(1, trayectoria_cada)
         self.seed = seed
         if seed is not None:
             import random as _rand
@@ -81,6 +83,7 @@ class BusquedaLocalIteradaSudoku:
         historia_fitness = [mejor_fitness]
         historia_actual = [fitness_actual]
         iteraciones_sin_mejora = 0
+        trayectoria_soluciones = [] if self._save_trayectoria else None
         
         
         print(f"Búsqueda inicial: Fitness = {fitness_actual:.2f}")
@@ -110,6 +113,11 @@ class BusquedaLocalIteradaSudoku:
             
             historia_fitness.append(mejor_fitness)
             historia_actual.append(fitness_actual)
+            if self._save_trayectoria and (t % self._trayectoria_cada == 0):
+                try:
+                    trayectoria_soluciones.append(np.array(solucion_actual.values, dtype=np.int32))
+                except Exception:
+                    pass
             
             # Imprimir progreso
             if t % 10 == 0:
@@ -132,6 +140,8 @@ class BusquedaLocalIteradaSudoku:
             'iteraciones_totales': t,
             'seed': self.seed
         }
+        if self._save_trayectoria:
+            estadisticas['trayectoria_soluciones'] = trayectoria_soluciones or []
         
         return mejor_solucion, mejor_fitness, estadisticas
 

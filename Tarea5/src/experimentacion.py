@@ -16,7 +16,7 @@ from memetico import MemeticGeneticSudoku
 import graficas
 
 
-def ejecutar_recocido_simulado(problema, num_ejecuciones=30):
+def ejecutar_recocido_simulado(problema, num_ejecuciones=30, save_trayectoria=False, trayectoria_cada=1):
     """Ejecuta Recocido Simulado múltiples veces"""
     print(f"\n{'='*60}")
     print("  RECOCIDO SIMULADO")
@@ -41,7 +41,9 @@ def ejecutar_recocido_simulado(problema, num_ejecuciones=30):
         mejor, fitness, stats = recocido_simulado(
             problema,
             **params,
-            seed=None  # Genera seed aleatoria cada vez
+            seed=None,  # Genera seed aleatoria cada vez
+            save_trayectoria=save_trayectoria,
+            trayectoria_cada=trayectoria_cada
         )
         
         resultado = {
@@ -54,7 +56,8 @@ def ejecutar_recocido_simulado(problema, num_ejecuciones=30):
             # historiales por iteración (si el algoritmo los devuelve)
             'historia_mejor': stats.get('historia_mejor'),
             'historia_actual': stats.get('historia_actual'),
-            'solucion': mejor
+            'solucion': mejor,
+            'trayectoria_soluciones': stats.get('trayectoria_soluciones')
         }
         resultados.append(resultado)
         
@@ -85,7 +88,7 @@ def ejecutar_recocido_simulado(problema, num_ejecuciones=30):
     return stats_generales
 
 
-def ejecutar_ils(problema, num_ejecuciones=30):
+def ejecutar_ils(problema, num_ejecuciones=30, save_trayectoria=False, trayectoria_cada=1):
     """Ejecuta Búsqueda Local Iterada múltiples veces"""
     print(f"\n{'='*60}")
     print("  BÚSQUEDA LOCAL ITERADA (ILS)")
@@ -102,7 +105,7 @@ def ejecutar_ils(problema, num_ejecuciones=30):
         print(f"\nEjecución {i+1}/{num_ejecuciones}")
         print("-" * 40)
         
-        ils = BusquedaLocalIteradaSudoku(problema, seed=None)
+        ils = BusquedaLocalIteradaSudoku(problema, seed=None, save_trayectoria=save_trayectoria, trayectoria_cada=trayectoria_cada)
         mejor, fitness, stats = ils.iterated_local_search(**params)
         
         resultado = {
@@ -114,7 +117,8 @@ def ejecutar_ils(problema, num_ejecuciones=30):
             # historiales por iteración (si los devuelve ILS)
             'historia_mejor': stats.get('historia_mejor') or stats.get('historia_fitness'),
             'historia_actual': stats.get('historia_actual'),
-            'solucion': mejor
+            'solucion': mejor,
+            'trayectoria_soluciones': stats.get('trayectoria_soluciones')
         }
         resultados.append(resultado)
         
@@ -145,7 +149,7 @@ def ejecutar_ils(problema, num_ejecuciones=30):
     return stats_generales
 
 
-def ejecutar_memetico(problema, num_ejecuciones=30):
+def ejecutar_memetico(problema, num_ejecuciones=30, save_poblaciones=False):
     """Ejecuta Algoritmo Genético Memético múltiples veces"""
     print(f"\n{'='*60}")
     print("  ALGORITMO GENÉTICO MEMÉTICO")
@@ -174,7 +178,7 @@ def ejecutar_memetico(problema, num_ejecuciones=30):
             seed=None
         )
         
-        mejor, fitness, stats = ga_mem.run(verbose=False)
+        mejor, fitness, stats = ga_mem.run(verbose=False, save_poblaciones=save_poblaciones)
         
         resultado = {
             'ejecucion': i + 1,
@@ -182,6 +186,7 @@ def ejecutar_memetico(problema, num_ejecuciones=30):
             'evaluaciones': stats.get('evaluaciones_totales'),
             'generaciones': stats.get('generaciones'),
             'solucion': mejor,
+            'seed': stats.get('seed'),
             # incluir series temporales devueltas por el memético
             'historia_mejor': stats.get('historia_fitness'),
             'historia_promedio': stats.get('historia_promedio'),
@@ -272,13 +277,14 @@ def guardar_resultados_csv(resultados_sa, resultados_ils, resultados_mem, ejempl
         
         # Resultados detallados de Memético
         writer.writerow(['ALGORITMO MEMÉTICO - Ejecuciones Individuales'])
-        writer.writerow(['Ejecucion', 'Fitness', 'Evaluaciones', 'Generaciones'])
+        writer.writerow(['Ejecucion', 'Fitness', 'Evaluaciones', 'Generaciones', 'Seed'])
         for r in resultados_mem['ejecuciones']:
             writer.writerow([
                 r['ejecucion'],
                 f"{r['fitness']:.2f}",
                 r['evaluaciones'],
-                r['generaciones']
+                r['generaciones'],
+                r.get('seed', r.get('stats', {}).get('seed', ''))
             ])
         writer.writerow([])
         
@@ -335,6 +341,12 @@ if __name__ == "__main__":
                         help='Número de ejecuciones por algoritmo (default: 30)')
     parser.add_argument('--only_memetico', action='store_true', 
                         help='Ejecutar únicamente el algoritmo memético (omitir SA e ILS)')
+    parser.add_argument('--only_sa', action='store_true',
+                        help='Ejecutar únicamente Recocido Simulado (omitir ILS y Memético)')
+    parser.add_argument('--only_ils', action='store_true',
+                        help='Ejecutar únicamente ILS (omitir SA y Memético)')
+    parser.add_argument('--save_poblaciones', action='store_true',
+                        help='Guardar poblaciones por iteración/generación (aumenta el tamaño del pickle)')
     args = parser.parse_args()
     
     # Cargar problema(s)
@@ -376,32 +388,66 @@ if __name__ == "__main__":
         ejemplares_to_run = [('ejemplo', problema)]
         print("Usando grid de ejemplo")
 
+    # Determinar algoritmos seleccionados
+    seleccionados = []
+    if args.only_sa:
+        seleccionados.append('sa')
+    if args.only_ils:
+        seleccionados.append('ils')
+    if args.only_memetico:
+        seleccionados.append('memetico')
+    if not seleccionados:
+        seleccionados = ['sa', 'ils', 'memetico']
+
     # Ejecutar experimentos para cada ejemplar detectado
     for ejemplar_name, problema in ejemplares_to_run:
         print(f"\nTablero inicial ({ejemplar_name}):")
         print(problema.grid)
-        print(f"\nEjecutando {args.num_ejecuciones} ejecuciones de cada algoritmo para: {ejemplar_name}...")
+        if set(seleccionados) == {'sa', 'ils', 'memetico'}:
+            print(f"\nEjecutando {args.num_ejecuciones} ejecuciones de SA, ILS y Memético para: {ejemplar_name}...")
+        else:
+            nombres = {
+                'sa': 'Recocido Simulado',
+                'ils': 'ILS',
+                'memetico': 'Memético'
+            }
+            seleccion_humano = ", ".join(nombres[s] for s in seleccionados)
+            print(f"\nEjecutando {args.num_ejecuciones} ejecuciones de: {seleccion_humano} para: {ejemplar_name}...")
 
-        if args.only_memetico:
-            # Ejecutar solo memético
-            resultados_mem = ejecutar_memetico(problema, args.num_ejecuciones)
-            # Crear placeholders para SA e ILS (listas vacías) para que guardar funciones funcionen
+        # Ejecutar seleccionados y crear placeholders de los no seleccionados
+        resultados_sa = None
+        resultados_ils = None
+        resultados_mem = None
+
+        if 'sa' in seleccionados:
+            resultados_sa = ejecutar_recocido_simulado(problema, args.num_ejecuciones, save_trayectoria=args.save_poblaciones, trayectoria_cada=1)
+        else:
             resultados_sa = {
                 'algoritmo': 'Recocido Simulado',
                 'mejor': float('nan'), 'peor': float('nan'), 'promedio': float('nan'),
                 'desviacion': float('nan'), 'mediana': float('nan'), 'soluciones_optimas': 0,
                 'ejecuciones': [], 'parametros': {}
             }
+
+        if 'ils' in seleccionados:
+            resultados_ils = ejecutar_ils(problema, args.num_ejecuciones, save_trayectoria=args.save_poblaciones, trayectoria_cada=1)
+        else:
             resultados_ils = {
                 'algoritmo': 'ILS',
                 'mejor': float('nan'), 'peor': float('nan'), 'promedio': float('nan'),
                 'desviacion': float('nan'), 'mediana': float('nan'), 'soluciones_optimas': 0,
                 'ejecuciones': [], 'parametros': {}
             }
+
+        if 'memetico' in seleccionados:
+            resultados_mem = ejecutar_memetico(problema, args.num_ejecuciones, save_poblaciones=args.save_poblaciones)
         else:
-            resultados_sa = ejecutar_recocido_simulado(problema, args.num_ejecuciones)
-            resultados_ils = ejecutar_ils(problema, args.num_ejecuciones)
-            resultados_mem = ejecutar_memetico(problema, args.num_ejecuciones)
+            resultados_mem = {
+                'algoritmo': 'Memético',
+                'mejor': float('nan'), 'peor': float('nan'), 'promedio': float('nan'),
+                'desviacion': float('nan'), 'mediana': float('nan'), 'soluciones_optimas': 0,
+                'ejecuciones': [], 'parametros': {}
+            }
 
         # Guardar resultados para este ejemplar (incluye nombre en el archivo)
         print(f"\n{'='*60}")
@@ -421,8 +467,8 @@ if __name__ == "__main__":
 
         # Generar gráficas en la misma carpeta del ejemplar
         try:
-            if args.only_memetico:
-                # Solo generar la gráfica específica del memético
+            if len(seleccionados) == 1 and 'memetico' in seleccionados:
+                # Solo memético: gráfica específica por generación
                 graficas.graficar_evolucion_memetico(resultados_mem, out_dir)
             else:
                 # Gráfica comparativa por iteración (mejor vs activo/promedio)
@@ -431,19 +477,52 @@ if __name__ == "__main__":
                 except Exception as _e:
                     print(f"Advertencia generando gráfica comparativa por iteración: {_e}")
 
-                graficas.graficar_evolucion_aptitud_todos(resultados_sa, resultados_ils, resultados_mem, out_dir)
-                graficas.graficar_diversidad_todos(resultados_sa, resultados_ils, resultados_mem, out_dir)
-                graficas.graficar_aptitud_diversidad_todos(resultados_sa, resultados_ils, resultados_mem, out_dir)
-                graficas.graficar_calidad_ejecuciones_todos(resultados_sa, resultados_ils, resultados_mem, out_dir)
-                graficas.graficar_boxplot_comparacion(resultados_sa, resultados_ils, resultados_mem, out_dir)
-                graficas.graficar_entropia(resultados_sa, resultados_ils, resultados_mem, out_dir)
-                # Gráfica específica para evolución por generación del memético
+                # Conjuntamente, intentar las gráficas consolidadas (funcionan aunque haya placeholders)
                 try:
-                    graficas.graficar_evolucion_memetico(resultados_mem, out_dir)
-                except Exception:
-                    pass
+                    graficas.graficar_evolucion_aptitud_todos(resultados_sa, resultados_ils, resultados_mem, out_dir)
+                except Exception as _e:
+                    print(f"Advertencia graficar_evolucion_aptitud_todos: {_e}")
+                try:
+                    graficas.graficar_diversidad_todos(resultados_sa, resultados_ils, resultados_mem, out_dir)
+                except Exception as _e:
+                    print(f"Advertencia graficar_diversidad_todos: {_e}")
+                try:
+                    graficas.graficar_aptitud_diversidad_todos(resultados_sa, resultados_ils, resultados_mem, out_dir)
+                except Exception as _e:
+                    print(f"Advertencia graficar_aptitud_diversidad_todos: {_e}")
+                try:
+                    graficas.graficar_calidad_ejecuciones_todos(resultados_sa, resultados_ils, resultados_mem, out_dir)
+                except Exception as _e:
+                    print(f"Advertencia graficar_calidad_ejecuciones_todos: {_e}")
+                try:
+                    graficas.graficar_boxplot_comparacion(resultados_sa, resultados_ils, resultados_mem, out_dir)
+                except Exception as _e:
+                    print(f"Advertencia graficar_boxplot_comparacion: {_e}")
+                try:
+                    graficas.graficar_entropia(resultados_sa, resultados_ils, resultados_mem, out_dir)
+                except Exception as _e:
+                    print(f"Advertencia graficar_entropia: {_e}")
+                # Evolución de la entropía por iteración/generación (si hay poblaciones guardadas)
+                try:
+                    graficas.graficar_entropia_evolucion(resultados_sa, resultados_ils, resultados_mem, out_dir)
+                except Exception as _e:
+                    print(f"Advertencia generando evolución de entropía: {_e}")
+                # Gráfica específica para evolución por generación del memético (si se ejecutó)
+                if 'memetico' in seleccionados:
+                    try:
+                        graficas.graficar_evolucion_memetico(resultados_mem, out_dir)
+                    except Exception:
+                        pass
         except Exception as e:
             print(f"Error generando gráficas para {ejemplar_name}: {e}")
+        finally:
+            # Mensaje de progreso claro por ejemplar
+            print(f"\n>>> COMPLETADO: {ejemplar_name} (archivos en {out_dir})")
+            try:
+                import sys as _sys
+                _sys.stdout.flush()
+            except Exception:
+                pass
     
     # Resumen final
     print(f"\n{'='*60}")
