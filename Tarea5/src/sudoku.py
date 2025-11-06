@@ -1,11 +1,7 @@
 import numpy as np
 import random
 import math
-from typing import List, Tuple
 from collections import Counter
-import time
-import os
-import sys
 
 class Sudoku:
     def __init__(self, grid):
