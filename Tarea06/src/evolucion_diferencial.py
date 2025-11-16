@@ -40,7 +40,7 @@ def calcular_vector_mutado(poblacion, i, F):
     x_r1 = poblacion[r1]
     x_r2 = poblacion[r2]
     x_r3 = poblacion[r3]
-    v_i= x_r1+ F+(x_r2-x_r3)
+    v_i= x_r1 + F*(x_r2-x_r3)
 
     return v_i
 
