@@ -106,7 +106,7 @@ def generar_todas_las_graficas(df):
     os.makedirs(output_dir, exist_ok=True)
     
     variantes = df['variante'].unique()
-    configuraciones = df[['F', 'CR']].drop_duplicates().values
+    configuraciones = df[['F', 'CR']].drop_duplicates().values.tolist()
     
     print(f"\nVariantes encontradas: {list(variantes)}")
     print(f"Configuraciones encontradas: {list(configuraciones)}")
@@ -131,7 +131,7 @@ def generar_resumen_estadistico(df, output_dir='graficas_boxplot'):
     resumen = []
     
     variantes = df['variante'].unique()
-    configuraciones = df[['F', 'CR']].drop_duplicates().values
+    configuraciones = df[['F', 'CR']].drop_duplicates().values.tolist()
     funciones = df['funcion'].unique()
     
     for variante in sorted(variantes):
