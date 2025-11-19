@@ -20,11 +20,11 @@ Este proyecto implementa tres variantes de estrategia diferencial y la original 
 ## Requisitos
 
 - Python 3.7+
-- Dependencias: `numpy`, `matplotlib`, `scipy`
+- Dependencias: `numpy`, `matplotlib`, `scipy`, `pandas`
 
 Instalar dependencias:
 ```bash
-pip install numpy matplotlib scipy
+pip install numpy matplotlib scipy pandas
 ```
 
 ---
