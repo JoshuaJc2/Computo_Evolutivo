@@ -1,4 +1,4 @@
-# Tarea 5 
+# Tarea 6 
 ## Cómputo Evolutivo 2026-1
 
 **Equipo:** TheKingdomPinguin
